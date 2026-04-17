@@ -9,13 +9,13 @@ the ability to complete amendments to claims submitted.
 
 ## Running the service locally
 
-Service Manager for EUVAT: `sm2 --start EUVAT_ALL`
+- Service Manager for EUVAT: `sm2 --start EUVAT_ALL`
 
-To check libraries update, run all tests and coverage: `./run_all_tests.sh`
+- To check libraries update, run all tests and coverage: `./run_all_tests.sh`
 
-To start the server locally: `sbt run` or `sbt run 18502`
+- To start the server locally: `sbt run` or `sbt run 18502`
 
-To execute the scala formatter: `./run_fmt_checks.sh`
+- To execute the scala formatter: `./run_fmt_checks.sh`
 
 
 ### License
