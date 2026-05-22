@@ -1,3 +1,5 @@
 # microservice specific routes
 
 GET        /hello-world             uk.gov.hmrc.euvatrefunds.controllers.MicroserviceHelloWorldController.hello
+
+GET        /traders/:vrn            uk.gov.hmrc.euvatrefunds.controllers.TraderKnownFactsController.getByVrn(vrn: String)
