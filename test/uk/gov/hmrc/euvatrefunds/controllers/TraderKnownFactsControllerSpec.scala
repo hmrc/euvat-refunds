@@ -16,46 +16,72 @@
 
 package uk.gov.hmrc.euvatrefunds.controllers
 
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{mock, when}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.connectors.DatacacheProxyConnector
+import uk.gov.hmrc.euvatrefunds.errors.SystemException
 import uk.gov.hmrc.euvatrefunds.models.TraderKnownFacts
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TraderKnownFactsControllerSpec extends AnyWordSpec with Matchers {
+class TraderKnownFactsControllerSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
 
-  private val connector  = mock(classOf[DatacacheProxyConnector])
+  private implicit val system: ActorSystem = ActorSystem("TraderKnownFactsControllerSpec")
+  private implicit val materializer: Materializer = Materializer(system)
+
+  override def afterAll(): Unit = {
+    val _ = system.terminate()
+    super.afterAll()
+  }
+
+  private val connector = mock(classOf[DatacacheProxyConnector])
   private val controller = new TraderKnownFactsController(stubControllerComponents(), connector)
 
   private val facts = TraderKnownFacts(vrn = "123456789", traderName = Some("ABC GmbH"), tradeClass = Some("8765"))
 
-  "TraderKnownFactsController.getByVrn" should {
+  private def postKnownFacts(body: JsValue): Future[Result] =
+    call(controller.getKnownFacts(), FakeRequest(POST, "/traders/getKnownFacts"), body)
 
-    "return 200 with the trader known facts as JSON when found" in {
+  "TraderKnownFactsController.getKnownFacts" should {
+
+    "return 200 with the trader known facts as JSON when found with a business activity code" in {
       when(connector.getTraderKnownFacts(any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(facts)))
 
-      val result = controller.getByVrn("123456789")(FakeRequest())
+      val result = postKnownFacts(Json.obj("vrn" -> "123456789"))
 
-      status(result) shouldBe OK
+      status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(facts)
     }
 
-    "return 404 when the trader is not found" in {
+    "fail with a SystemException when the trader is found but the business activity code is missing" in {
+      when(connector.getTraderKnownFacts(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some(facts.copy(tradeClass = None))))
+
+      postKnownFacts(Json.obj("vrn" -> "123456789")).failed.futureValue shouldBe a[SystemException]
+    }
+
+    "fail with a SystemException when the trader is not found" in {
       when(connector.getTraderKnownFacts(any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(None))
 
-      val result = controller.getByVrn("999999999")(FakeRequest())
+      postKnownFacts(Json.obj("vrn" -> "999999999")).failed.futureValue shouldBe a[SystemException]
+    }
 
-      status(result) shouldBe NOT_FOUND
+    "fail with a SystemException when the VRN is missing from the request" in {
+      postKnownFacts(Json.obj()).failed.futureValue shouldBe a[SystemException]
     }
   }
 }

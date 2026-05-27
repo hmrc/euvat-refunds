@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.euvatrefunds.controllers
 
-import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.connectors.DatacacheProxyConnector
+import uk.gov.hmrc.euvatrefunds.errors.SystemException
+import uk.gov.hmrc.euvatrefunds.models.GetKnownFactsRequest
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TraderKnownFactsController @Inject() (
@@ -31,9 +33,16 @@ class TraderKnownFactsController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BackendController(cc):
 
-  def getByVrn(vrn: String): Action[AnyContent] = Action.async { implicit request =>
-    connector.getTraderKnownFacts(vrn).map {
-      case Some(facts) => Ok(Json.toJson(facts))
-      case None        => NotFound
+  def getKnownFacts(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val maybeVrn = request.body.validate[GetKnownFactsRequest].asOpt.map(_.vrn.trim).filter(_.nonEmpty)
+
+    maybeVrn match {
+      case None =>
+        Future.failed(new SystemException("VAT registration number is missing"))
+      case Some(vrn) =>
+        connector.getTraderKnownFacts(vrn).map {
+          case Some(facts) if facts.tradeClass.exists(_.trim.nonEmpty) => Ok(Json.toJson(facts))
+          case _                                                       => throw new SystemException("Business activity code1 is missing")
+        }
     }
   }

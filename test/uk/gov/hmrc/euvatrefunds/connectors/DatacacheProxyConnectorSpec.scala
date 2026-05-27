@@ -57,10 +57,10 @@ class DatacacheProxyConnectorSpec
   private lazy val connector: DatacacheProxyConnector = new DatacacheProxyConnector(appConfig, httpClientV2)
 
   private val sampleFacts = TraderKnownFacts(
-    vrn = "123456789",
-    traderName = Some("ABC GmbH"),
-    postcode = Some("AB12 3CD"),
-    tradeClass = Some("8765"),
+    vrn                    = "123456789",
+    traderName             = Some("ABC GmbH"),
+    postcode               = Some("AB12 3CD"),
+    tradeClass             = Some("8765"),
     missingTraderIndicator = Some(false)
   )
 
