@@ -24,14 +24,13 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.TraderKnownFacts
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.euvatrefunds.models.TraderKnownFactsResponse
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DatacacheProxyConnectorSpec
+class RdsCandeProxyConnectorSpec
     extends AnyWordSpec
     with Matchers
     with ScalaFutures
@@ -46,42 +45,43 @@ class DatacacheProxyConnectorSpec
       ConfigFactory.parseString(
         s"""
            |appName = euvat-refunds
-           |microservice.services.rds-datacache-proxy.host = "$wireMockHost"
-           |microservice.services.rds-datacache-proxy.port = $wireMockPort
+           |microservice.services.rds-cande-proxy.host = "$wireMockHost"
+           |microservice.services.rds-cande-proxy.protocol = "http"
+           |microservice.services.rds-cande-proxy.port = $wireMockPort
            |""".stripMargin
       )
     )
 
-  private lazy val appConfig: AppConfig = new AppConfig(configuration, new ServicesConfig(configuration))
+  private lazy val appConfig: AppConfig = new AppConfig(configuration)
 
-  private lazy val connector: DatacacheProxyConnector = new DatacacheProxyConnector(appConfig, httpClientV2)
+  private lazy val connector: RdsCandeProxyConnector = new RdsCandeProxyConnector(appConfig, httpClientV2)
 
-  private val sampleFacts = TraderKnownFacts(
-    vrn                    = "123456789",
+  private val sampleFacts = TraderKnownFactsResponse(
+    vatRegNumber           = 123456789,
     traderName             = Some("ABC GmbH"),
     postcode               = Some("AB12 3CD"),
     tradeClass             = Some("8765"),
-    missingTraderIndicator = Some(false)
+    missingTraderIndicator = Some("N")
   )
 
-  "DatacacheProxyConnector.getTraderKnownFacts" should {
+  "RdsCandeProxyConnector.getTraderKnownFacts" should {
 
-    "return the trader known facts when rds-datacache-proxy returns 200" in {
+    "return the trader known facts when rds-cande-proxy returns 200" in {
       stubFor(
-        get(urlEqualTo("/traders/123456789"))
+        get(urlEqualTo("/rds-cande-proxy/euvat/traders/getKnownFacts"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
       )
 
-      connector.getTraderKnownFacts("123456789").futureValue shouldBe Some(sampleFacts)
+      connector.getTraderKnownFacts().futureValue shouldBe sampleFacts
     }
 
-    "return None when rds-datacache-proxy returns 404" in {
+    "return error when rds-cande-proxy returns 404" in {
       stubFor(
         get(urlEqualTo("/traders/999999999"))
           .willReturn(aResponse().withStatus(404))
       )
 
-      connector.getTraderKnownFacts("999999999").futureValue shouldBe None
+      connector.getTraderKnownFacts().failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }

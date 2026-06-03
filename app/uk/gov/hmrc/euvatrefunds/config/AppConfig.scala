@@ -16,13 +16,19 @@
 
 package uk.gov.hmrc.euvatrefunds.config
 
-import javax.inject.{Inject, Singleton}
 import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import javax.inject.{Inject, Singleton}
 
 @Singleton
-class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig):
+class AppConfig @Inject() (config: Configuration):
 
   val appName: String = config.get[String]("appName")
 
-  val datacacheProxyBaseUrl: String = servicesConfig.baseUrl("rds-datacache-proxy")
+  def baseUrl(service: String): String = {
+    val protocol: String = config.get[String](s"microservice.services.$service.protocol")
+    val host: String = config.get[String](s"microservice.services.$service.host")
+    val port: String = config.get[String](s"microservice.services.$service.port")
+
+    s"$protocol://$host:$port"
+  }

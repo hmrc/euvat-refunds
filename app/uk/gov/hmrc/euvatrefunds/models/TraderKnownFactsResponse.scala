@@ -18,8 +18,10 @@ package uk.gov.hmrc.euvatrefunds.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class TraderKnownFacts(
-  vrn: String,
+import java.time.LocalDateTime
+
+case class TraderKnownFactsResponse(
+  vatRegNumber: Int,
   traderName: Option[String] = None,
   addressLine1: Option[String] = None,
   addressLine2: Option[String] = None,
@@ -28,11 +30,11 @@ case class TraderKnownFacts(
   addressLine5: Option[String] = None,
   postcode: Option[String] = None,
   tradeClass: Option[String] = None,
-  dateOfRegistration: Option[String] = None,
-  dateOfDeregistration: Option[String] = None,
-  missingTraderIndicator: Option[Boolean] = None,
-  singleMarketIndicator: Option[String] = None
+  dateOfRegistration: Option[LocalDateTime] = None,
+  dateOfDeregistration: Option[LocalDateTime] = None,
+  missingTraderIndicator: Option[String] = None,
+  singleMarketIndicator: Option[Int] = None
 )
 
-object TraderKnownFacts:
-  given OFormat[TraderKnownFacts] = Json.format[TraderKnownFacts]
+object TraderKnownFactsResponse:
+  given OFormat[TraderKnownFactsResponse] = Json.format[TraderKnownFactsResponse]

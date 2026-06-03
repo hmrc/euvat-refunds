@@ -28,9 +28,10 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.euvatrefunds.connectors.DatacacheProxyConnector
+import uk.gov.hmrc.euvatrefunds.actions.AuthAction
 import uk.gov.hmrc.euvatrefunds.errors.SystemException
-import uk.gov.hmrc.euvatrefunds.models.TraderKnownFacts
+import uk.gov.hmrc.euvatrefunds.models.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.services.EuVatService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,10 +47,11 @@ class TraderKnownFactsControllerSpec extends AnyWordSpec with Matchers with Scal
     super.afterAll()
   }
 
-  private val connector = mock(classOf[DatacacheProxyConnector])
-  private val controller = new TraderKnownFactsController(stubControllerComponents(), connector)
+  private val service = mock(classOf[EuVatService])
+  private val auth = mock(classOf[AuthAction])
+  private val controller = new TraderKnownFactsController(auth, service, stubControllerComponents())
 
-  private val facts = TraderKnownFacts(vrn = "123456789", traderName = Some("ABC GmbH"), tradeClass = Some("8765"))
+  private val facts = TraderKnownFactsResponse(vatRegNumber = 123456789, traderName = Some("ABC GmbH"), tradeClass = Some("8765"))
 
   private def postKnownFacts(body: JsValue): Future[Result] =
     call(controller.getKnownFacts(), FakeRequest(POST, "/traders/getKnownFacts"), body)
@@ -57,8 +59,8 @@ class TraderKnownFactsControllerSpec extends AnyWordSpec with Matchers with Scal
   "TraderKnownFactsController.getKnownFacts" should {
 
     "return 200 with the trader known facts as JSON when found with a business activity code" in {
-      when(connector.getTraderKnownFacts(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Some(facts)))
+      when(service.retrieveDirectDebits()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(facts))
 
       val result = postKnownFacts(Json.obj("vrn" -> "123456789"))
 
@@ -67,17 +69,10 @@ class TraderKnownFactsControllerSpec extends AnyWordSpec with Matchers with Scal
     }
 
     "fail with a SystemException when the trader is found but the business activity code is missing" in {
-      when(connector.getTraderKnownFacts(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Some(facts.copy(tradeClass = None))))
+      when(service.retrieveDirectDebits()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(facts.copy(tradeClass = None)))
 
       postKnownFacts(Json.obj("vrn" -> "123456789")).failed.futureValue shouldBe a[SystemException]
-    }
-
-    "fail with a SystemException when the trader is not found" in {
-      when(connector.getTraderKnownFacts(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(None))
-
-      postKnownFacts(Json.obj("vrn" -> "999999999")).failed.futureValue shouldBe a[SystemException]
     }
 
     "fail with a SystemException when the VRN is missing from the request" in {

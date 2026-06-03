@@ -16,33 +16,29 @@
 
 package uk.gov.hmrc.euvatrefunds.controllers
 
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.euvatrefunds.connectors.DatacacheProxyConnector
-import uk.gov.hmrc.euvatrefunds.errors.SystemException
-import uk.gov.hmrc.euvatrefunds.models.GetKnownFactsRequest
+import com.google.inject.Inject
+import play.api.Logging
+import play.api.libs.json.Json
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.euvatrefunds.actions.AuthAction
+import uk.gov.hmrc.euvatrefunds.services.EuVatService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-@Singleton
 class TraderKnownFactsController @Inject() (
-  cc: ControllerComponents,
-  connector: DatacacheProxyConnector
+  authorise: AuthAction,
+  service: EuVatService,
+  val cc: ControllerComponents
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc):
+    extends BackendController(cc)
+    with Logging:
 
-  def getKnownFacts(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val maybeVrn = request.body.validate[GetKnownFactsRequest].asOpt.map(_.vrn.trim).filter(_.nonEmpty)
-
-    maybeVrn match {
-      case None =>
-        Future.failed(new SystemException("VAT registration number is missing"))
-      case Some(vrn) =>
-        connector.getTraderKnownFacts(vrn).map {
-          case Some(facts) if facts.tradeClass.exists(_.trim.nonEmpty) => Ok(Json.toJson(facts))
-          case _                                                       => throw new SystemException("Business activity code1 is missing")
-        }
+  def getKnownFacts: Action[AnyContent] =
+    authorise.async { implicit request =>
+      println("********** Calling service")
+      service.retrieveDirectDebits().map { response =>
+        println(s"********** received service response: $response")
+        Ok(Json.toJson(response))
+      }
     }
-  }

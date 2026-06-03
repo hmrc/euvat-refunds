@@ -17,7 +17,7 @@
 package uk.gov.hmrc.euvatrefunds.connectors
 
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.TraderKnownFacts
+import uk.gov.hmrc.euvatrefunds.models.TraderKnownFactsResponse
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -26,14 +26,16 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class DatacacheProxyConnector @Inject() (
+class RdsCandeProxyConnector @Inject() (
   appConfig: AppConfig,
   http: HttpClientV2
 )(implicit ec: ExecutionContext):
 
-  private val baseUrl: String = appConfig.datacacheProxyBaseUrl
+  private val baseUrl: String = appConfig.baseUrl("rds-cande-proxy") + "/rds-cande-proxy"
 
-  def getTraderKnownFacts(vrn: String)(implicit hc: HeaderCarrier): Future[Option[TraderKnownFacts]] =
+  def getTraderKnownFacts()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] =
+    println("********** Connecting to rds proxy service")
+
     http
-      .get(url"$baseUrl/traders/$vrn")
-      .execute[Option[TraderKnownFacts]]
+      .get(url"$baseUrl/euvat/traders/getKnownFacts")
+      .execute[TraderKnownFactsResponse]

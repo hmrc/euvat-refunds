@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.euvatrefunds.controllers
+package uk.gov.hmrc.euvatrefunds.services
 
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import com.google.inject.Inject
+import uk.gov.hmrc.euvatrefunds.connectors.RdsCandeProxyConnector
+import uk.gov.hmrc.euvatrefunds.models.TraderKnownFactsResponse
+import uk.gov.hmrc.http.HeaderCarrier
 
-import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject() (
-  cc: ControllerComponents
-) extends BackendController(cc):
+class EuVatService @Inject() (
+  connector: RdsCandeProxyConnector
+) {
 
-  val hello: Action[AnyContent] =
-    Action:
-      implicit request => Ok("Hello world")
+  def retrieveDirectDebits()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] = {
+    println("********** Calling connector")
+    connector.getTraderKnownFacts()
+  }
+
+}
