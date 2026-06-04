@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.euvatrefunds.services
+package uk.gov.hmrc.euvatrefunds.models.requests
 
-import com.google.inject.Inject
-import uk.gov.hmrc.euvatrefunds.connectors.RdsCandeProxyConnector
-import uk.gov.hmrc.euvatrefunds.models.TraderKnownFactsResponse
-import uk.gov.hmrc.http.HeaderCarrier
+import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.http.SessionId
 
-import scala.concurrent.Future
+case class AuthenticatedRequest[A](
+  private val request: Request[A],
+  credId: String,
+  sessionId: SessionId
+) extends WrappedRequest[A](request) {
 
-class EuVatService @Inject() (
-  connector: RdsCandeProxyConnector
-) {
-
-  def retrieveDirectDebits()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] = {
-    println("********** Calling connector")
-    connector.getTraderKnownFacts()
-  }
-
+  lazy val sessionData = s"credId = $credId, sessionId = $sessionId"
 }

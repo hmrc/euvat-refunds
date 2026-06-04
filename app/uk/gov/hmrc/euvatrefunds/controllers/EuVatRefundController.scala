@@ -21,14 +21,14 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.services.EuVatService
+import uk.gov.hmrc.euvatrefunds.services.EuVatRefundService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
-class TraderKnownFactsController @Inject() (
+class EuVatRefundController @Inject() (
   authorise: AuthAction,
-  service: EuVatService,
+  service: EuVatRefundService,
   val cc: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)

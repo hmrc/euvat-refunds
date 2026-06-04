@@ -22,7 +22,7 @@ import play.api.mvc.Results.Unauthorized
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.auth.core.*
-import uk.gov.hmrc.euvatrefunds.models.AuthenticatedRequest
+import uk.gov.hmrc.euvatrefunds.models.requests.AuthenticatedRequest
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId, UnauthorizedException}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -63,20 +63,6 @@ class DefaultAuthAction @Inject() (
       }
     }
   }
-
-//  private def extractRegNo(enrolments: Enrolments): Option[String] = {
-//    val keys = List(
-//      "HMRC-EU-REF-ORG" -> "VATRegNo",
-//      "HMCE-VAT-AGNT"   -> "AgentRefNo",
-//      "HMRC-NOVRN-AGNT" -> "VATAgentRefNo"
-//    )
-//
-//    keys.collectFirst { case (enrolKey, idName) =>
-//      enrolments.enrolments
-//        .find(_.key == enrolKey)
-//        .flatMap(_.identifiers.find(_.key == idName).map(_.value))
-//    }.flatten
-//  }
 
   override def invokeBlock[A](
     request: Request[A],
