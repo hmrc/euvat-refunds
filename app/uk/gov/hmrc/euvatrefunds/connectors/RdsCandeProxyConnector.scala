@@ -34,8 +34,6 @@ class RdsCandeProxyConnector @Inject() (
   private val baseUrl: String = appConfig.baseUrl("rds-cande-proxy") + "/rds-cande-proxy"
 
   def getTraderKnownFacts()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] =
-    println(s"********** Connecting to rds proxy service")
-
     http
       .get(url"$baseUrl/euvat/traders/getKnownFacts")
       .execute[TraderKnownFactsResponse]

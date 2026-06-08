@@ -28,7 +28,6 @@ class EuVatRefundService @Inject() (
 ) {
 
   def retrieveDirectDebits()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] = {
-    println("********** Calling connector")
     connector.getTraderKnownFacts()
   }
 
