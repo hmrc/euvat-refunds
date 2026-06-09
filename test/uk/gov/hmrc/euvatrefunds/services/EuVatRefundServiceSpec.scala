@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.euvatrefunds.services
 
-import org.mockito.Mockito.*
+import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
-import uk.gov.hmrc.euvatrefunds.connectors.RdsCandeProxyConnector
+import play.api.Configuration
+import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
 import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,34 +35,80 @@ class EuVatRefundServiceSpec extends AnyWordSpec with Matchers with MockitoSugar
   implicit val ec: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val mockConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
-
-  val service = new EuVatRefundService(mockConnector)
-
   "EuVatRefundService.retrieveDirectDebits" should {
 
-    "return the response from the connector" in {
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            s"""
+               |feature-switch.rds-cande-stubbed = false
+               |""".stripMargin
+          )
+        )
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatRefundService(mockCandeConnector, mockStubsConnector, configuration)
       val expectedResponse = TraderKnownFactsResponse(
         traderName   = Some("Test Trader"),
         vatRegNumber = 123456
       )
 
-      when(mockConnector.getTraderKnownFacts()(any()))
+      when(mockCandeConnector.getTraderKnownFacts()(any()))
         .thenReturn(Future.successful(expectedResponse))
 
-      val result = service.retrieveDirectDebits().futureValue
+      val result = service.retrieveDirectDebits("123456").futureValue
 
       result shouldBe expectedResponse
-      verify(mockConnector, times(1)).getTraderKnownFacts()(any())
+      verify(mockCandeConnector, times(1)).getTraderKnownFacts()(any())
+    }
+
+    "return the response from the stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            s"""
+               |feature-switch.rds-cande-stubbed = true
+               |""".stripMargin
+          )
+        )
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatRefundService(mockCandeConnector, mockStubsConnector, configuration)
+      val expectedResponse = TraderKnownFactsResponse(
+        traderName   = Some("Test Trader"),
+        vatRegNumber = 123456
+      )
+
+      when(mockStubsConnector.getTraderKnownFacts(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      val result = service.retrieveDirectDebits("123456").futureValue
+
+      result shouldBe expectedResponse
+      verify(mockStubsConnector, times(1)).getTraderKnownFacts(any())(any())
     }
 
     "propagate an exception from the connector" in {
       val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            s"""
+               |feature-switch.rds-cande-stubbed = false
+               |""".stripMargin
+          )
+        )
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatRefundService(mockCandeConnector, mockStubsConnector, configuration)
 
-      when(mockConnector.getTraderKnownFacts()(any()))
+      when(mockCandeConnector.getTraderKnownFacts()(any()))
         .thenReturn(Future.failed(failure))
 
-      val result = service.retrieveDirectDebits()
+      val result = service.retrieveDirectDebits("123")
 
       whenReady(result.failed) { ex =>
         ex shouldBe failure

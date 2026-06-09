@@ -40,27 +40,36 @@ class DefaultAuthAction @Inject() (
   private def usingSupportedAffinityAndEnrolments(
     affinityGroup: AffinityGroup,
     enrolments: Enrolments
-  ): Boolean = {
-    // Map enrolment keys → required identifier name
+  ): (Boolean, String, String) = {
+
+    // enrolment → identifier name
     val requiredIdentifiers: Map[String, String] = Map(
       "HMRC-EU-REF-ORG" -> "VATRegNo",
       "HMCE-VAT-AGNT"   -> "AgentRefNo",
       "HMRC-NOVRN-AGNT" -> "VATAgentRefNo"
     )
 
-    // Select which enrolment keys apply for this affinity group
+    // allowed enrolments per affinity group
     val allowedKeys: Set[String] = affinityGroup match {
       case AffinityGroup.Organisation | AffinityGroup.Individual => Set("HMRC-EU-REF-ORG")
       case AffinityGroup.Agent                                   => Set("HMCE-VAT-AGNT", "HMRC-NOVRN-AGNT")
       case _                                                     => Set.empty[String]
     }
 
-    enrolments.enrolments.exists { enrolment =>
-      enrolment.isActivated &&
-      allowedKeys.contains(enrolment.key) &&
-      requiredIdentifiers.get(enrolment.key).exists { requiredIdName =>
-        enrolment.identifiers.exists(id => id.key == requiredIdName && id.value.trim.nonEmpty)
-      }
+    // find matching enrolment + identifier
+    val identifiers: Option[(String, String)] =
+      enrolments.enrolments.collectFirst {
+        case enrol if enrol.isActivated && allowedKeys.contains(enrol.key) =>
+          requiredIdentifiers.get(enrol.key).flatMap { requiredIdName =>
+            enrol.identifiers
+              .find(id => id.key == requiredIdName && id.value.trim.nonEmpty)
+              .map(id => (requiredIdName, id.value))
+          }
+      }.flatten
+
+    identifiers match {
+      case Some((idName, idValue)) => (true, idName, idValue)
+      case None                    => throw new UnauthorizedException("Missing or empty enrolment identifier")
     }
   }
 
@@ -75,8 +84,10 @@ class DefaultAuthAction @Inject() (
 
     authorised()
       .retrieve(Retrievals.affinityGroup and Retrievals.credentials and Retrievals.allEnrolments) {
-        case Some(affinityGroup) ~ Some(credentials) ~ enrolments if usingSupportedAffinityAndEnrolments(affinityGroup, enrolments) =>
-          block(AuthenticatedRequest(request, credentials.providerId, sessionId))
+        case Some(affinityGroup) ~ Some(credentials) ~ enrolments =>
+          val (isValid, idKey, idValue) = usingSupportedAffinityAndEnrolments(affinityGroup, enrolments)
+
+          block(AuthenticatedRequest(request, credentials.providerId, sessionId, idKey, idValue))
         case _ =>
           throw new UnauthorizedException("Unable to retrieve required auth values")
       }

@@ -22,8 +22,11 @@ import uk.gov.hmrc.http.SessionId
 case class AuthenticatedRequest[A](
   private val request: Request[A],
   credId: String,
-  sessionId: SessionId
+  sessionId: SessionId,
+  identifierName: String,
+  identifierValue: String
 ) extends WrappedRequest[A](request) {
 
-  lazy val sessionData = s"credId = $credId, sessionId = $sessionId"
+  lazy val sessionData =
+    s"credId = $credId, sessionId = $sessionId, identifierName = $identifierName, identifierValue = $identifierValue"
 }
