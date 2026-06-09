@@ -17,18 +17,27 @@
 package uk.gov.hmrc.euvatrefunds.services
 
 import com.google.inject.Inject
-import uk.gov.hmrc.euvatrefunds.connectors.RdsCandeProxyConnector
+import play.api.Configuration
+import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
 import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
 class EuVatRefundService @Inject() (
-  connector: RdsCandeProxyConnector
+  rdsCandeProxyConnector: RdsCandeProxyConnector,
+  euVatStubsConnector: EuVatStubsConnector,
+  configuration: Configuration
 ) {
 
-  def retrieveDirectDebits()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] = {
-    connector.getTraderKnownFacts()
+  private val candeStubbed: Boolean = configuration.get[Boolean]("feature-switch.rds-cande-stubbed")
+
+  def retrieveDirectDebits(vrn: String)(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getTraderKnownFacts(vrn)
+    } else {
+      rdsCandeProxyConnector.getTraderKnownFacts()
+    }
   }
 
 }

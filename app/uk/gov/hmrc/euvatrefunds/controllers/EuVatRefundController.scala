@@ -36,7 +36,7 @@ class EuVatRefundController @Inject() (
 
   def getKnownFacts: Action[AnyContent] =
     authorise.async { implicit request =>
-      service.retrieveDirectDebits().map { response =>
+      service.retrieveDirectDebits(request.identifierValue).map { response =>
         Ok(Json.toJson(response))
       }
     }

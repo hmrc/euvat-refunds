@@ -59,5 +59,18 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
       appConfig.appName                        shouldBe "test-service"
     }
 
+    "build baseUrl correctly from microservice config for euvat-stubs" in {
+      val config = Configuration(
+        "appName"                                    -> "test-service",
+        "microservice.services.euvat-stubs.protocol" -> "http",
+        "microservice.services.euvat-stubs.host"     -> "localhost",
+        "microservice.services.euvat-stubs.port"     -> "18000"
+      )
+
+      val appConfig = new AppConfig(config)
+      appConfig.baseUrl("euvat-stubs") shouldBe "http://localhost:18000"
+      appConfig.appName                shouldBe "test-service"
+    }
+
   }
 }

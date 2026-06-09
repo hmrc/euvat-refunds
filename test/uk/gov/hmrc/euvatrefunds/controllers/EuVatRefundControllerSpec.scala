@@ -52,8 +52,10 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
     ): Future[Result] = {
       val fakeAuthReq = AuthenticatedRequest(
         request,
-        credId    = "cred-123",
-        sessionId = SessionId("session-123")
+        credId          = "cred-123",
+        sessionId       = SessionId("session-123"),
+        identifierName  = "VatRegNo",
+        identifierValue = "999108"
       )
       block(fakeAuthReq)
     }
@@ -74,7 +76,7 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
   "EuVatRefundController.getKnownFacts" should {
 
     "return 200 with JSON when service returns known facts" in {
-      when(service.retrieveDirectDebits()(any()))
+      when(service.retrieveDirectDebits(any())(any()))
         .thenReturn(Future.successful(facts))
 
       val result = callEndpoint()
@@ -84,7 +86,7 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
     }
 
     "return 200 even if tradeClass is missing (controller does not throw)" in {
-      when(service.retrieveDirectDebits()(any()))
+      when(service.retrieveDirectDebits(any())(any()))
         .thenReturn(Future.successful(facts.copy(tradeClass = None)))
 
       val result = callEndpoint()
@@ -94,7 +96,7 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
     }
 
     "return 200 even if VRN is missing (controller does not throw)" in {
-      when(service.retrieveDirectDebits()(any()))
+      when(service.retrieveDirectDebits(any())(any()))
         .thenReturn(Future.successful(facts.copy(vatRegNumber = 0)))
 
       val result = callEndpoint()

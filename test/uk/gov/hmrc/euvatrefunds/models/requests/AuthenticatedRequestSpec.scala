@@ -29,8 +29,10 @@ class AuthenticatedRequestSpec extends AnyWordSpec with Matchers {
       val underlying = FakeRequest("GET", "/test")
       val authReq = AuthenticatedRequest(
         underlying,
-        credId    = "cred-123",
-        sessionId = SessionId("session-xyz")
+        credId          = "cred-123",
+        sessionId       = SessionId("session-xyz"),
+        identifierName  = "VatRegNo",
+        identifierValue = "999108"
       )
 
       authReq.method shouldBe "GET"
@@ -40,22 +42,27 @@ class AuthenticatedRequestSpec extends AnyWordSpec with Matchers {
     "expose the provided credId and sessionId" in {
       val authReq = AuthenticatedRequest(
         FakeRequest(),
-        credId    = "cred-999",
-        sessionId = SessionId("session-abc")
+        credId          = "cred-999",
+        sessionId       = SessionId("session-abc"),
+        identifierName  = "VatRegNo",
+        identifierValue = "999108"
       )
 
       authReq.credId          shouldBe "cred-999"
       authReq.sessionId.value shouldBe "session-abc"
+      authReq.identifierValue shouldBe "999108"
     }
 
     "produce the correct sessionData string" in {
       val authReq = AuthenticatedRequest(
         FakeRequest(),
-        credId    = "cred-111",
-        sessionId = SessionId("session-222")
+        credId          = "cred-111",
+        sessionId       = SessionId("session-222"),
+        identifierName  = "VatRegNo",
+        identifierValue = "999108"
       )
 
-      authReq.sessionData shouldBe s"credId = cred-111, sessionId = $SessionId(session-222)"
+      authReq.sessionData shouldBe s"credId = cred-111, sessionId = $SessionId(session-222), identifierName = VatRegNo, identifierValue = 999108"
     }
   }
 }
