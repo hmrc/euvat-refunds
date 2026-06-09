@@ -16,10 +16,19 @@
 
 package uk.gov.hmrc.euvatrefunds.config
 
-import javax.inject.{Inject, Singleton}
 import play.api.Configuration
+
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class AppConfig @Inject() (config: Configuration):
 
   val appName: String = config.get[String]("appName")
+
+  def baseUrl(service: String): String = {
+    val protocol: String = config.get[String](s"microservice.services.$service.protocol")
+    val host: String = config.get[String](s"microservice.services.$service.host")
+    val port: String = config.get[String](s"microservice.services.$service.port")
+
+    s"$protocol://$host:$port"
+  }

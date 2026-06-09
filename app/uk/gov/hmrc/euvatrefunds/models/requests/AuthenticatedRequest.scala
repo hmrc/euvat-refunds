@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.euvatrefunds
+package uk.gov.hmrc.euvatrefunds.models.requests
 
-import com.google.inject.AbstractModule
-import uk.gov.hmrc.euvatrefunds.actions.{AuthAction, DefaultAuthAction}
-import uk.gov.hmrc.euvatrefunds.config.AppConfig
+import play.api.mvc.{Request, WrappedRequest}
+import uk.gov.hmrc.http.SessionId
 
-class Module extends AbstractModule:
+case class AuthenticatedRequest[A](
+  private val request: Request[A],
+  credId: String,
+  sessionId: SessionId
+) extends WrappedRequest[A](request) {
 
-  override def configure(): Unit =
-    bind(classOf[AuthAction]).to(classOf[DefaultAuthAction]).asEagerSingleton()
-    bind(classOf[AppConfig]).asEagerSingleton()
+  lazy val sessionData = s"credId = $credId, sessionId = $sessionId"
+}
