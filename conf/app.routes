@@ -1,3 +1,4 @@
 # microservice specific routes
 
-GET       /traders/getKnownFacts   uk.gov.hmrc.euvatrefunds.controllers.EuVatRefundController.getKnownFacts()
+GET       /traders/getTraderKnownFacts          uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getKnownFacts()
+GET       /traders/getKnownFacts                uk.gov.hmrc.euvatrefunds.controllers.EuVatCacheController.getTraderKnownFacts()

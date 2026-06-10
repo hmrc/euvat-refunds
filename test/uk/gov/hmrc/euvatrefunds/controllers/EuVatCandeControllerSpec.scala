@@ -29,17 +29,17 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
 import uk.gov.hmrc.euvatrefunds.models.requests.AuthenticatedRequest
 import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
-import uk.gov.hmrc.euvatrefunds.services.EuVatRefundService
+import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutures with MockitoSugar {
+class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutures with MockitoSugar {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  private val service = mock[EuVatRefundService]
+  private val service = mock[EuVatCandeService]
 
   // Mock AuthAction so it *invokes the block*
   private val authAction: AuthAction = new AuthAction {
@@ -62,7 +62,7 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
   }
 
   private val controller =
-    new EuVatRefundController(authAction, service, stubControllerComponents())
+    new EuVatCandeController(authAction, service, stubControllerComponents())
 
   private val facts = TraderKnownFactsResponse(
     vatRegNumber = 123456789,
@@ -73,10 +73,10 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
   private def callEndpoint() =
     controller.getKnownFacts()(FakeRequest(GET, "/traders/getKnownFacts"))
 
-  "EuVatRefundController.getKnownFacts" should {
+  "EuVatCacheController.getKnownFacts" should {
 
     "return 200 with JSON when service returns known facts" in {
-      when(service.retrieveDirectDebits(any())(any()))
+      when(service.retrieveKnownFacts(any())(any()))
         .thenReturn(Future.successful(facts))
 
       val result = callEndpoint()
@@ -86,7 +86,7 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
     }
 
     "return 200 even if tradeClass is missing (controller does not throw)" in {
-      when(service.retrieveDirectDebits(any())(any()))
+      when(service.retrieveKnownFacts(any())(any()))
         .thenReturn(Future.successful(facts.copy(tradeClass = None)))
 
       val result = callEndpoint()
@@ -96,7 +96,7 @@ class EuVatRefundControllerSpec extends AnyWordSpec with Matchers with ScalaFutu
     }
 
     "return 200 even if VRN is missing (controller does not throw)" in {
-      when(service.retrieveDirectDebits(any())(any()))
+      when(service.retrieveKnownFacts(any())(any()))
         .thenReturn(Future.successful(facts.copy(vatRegNumber = 0)))
 
       val result = callEndpoint()
