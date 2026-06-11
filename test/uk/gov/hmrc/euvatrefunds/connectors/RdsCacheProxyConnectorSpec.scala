@@ -30,7 +30,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class RdsCandeProxyConnectorSpec
+class RdsCacheProxyConnectorSpec
     extends AnyWordSpec
     with Matchers
     with ScalaFutures
@@ -45,16 +45,16 @@ class RdsCandeProxyConnectorSpec
       ConfigFactory.parseString(
         s"""
            |appName = euvat-refunds
-           |microservice.services.rds-cande-proxy.host = "$wireMockHost"
-           |microservice.services.rds-cande-proxy.protocol = "http"
-           |microservice.services.rds-cande-proxy.port = $wireMockPort
+           |microservice.services.rds-datacache-proxy.host = "$wireMockHost"
+           |microservice.services.rds-datacache-proxy.protocol = "http"
+           |microservice.services.rds-datacache-proxy.port = $wireMockPort
            |""".stripMargin
       )
     )
 
   private lazy val appConfig: AppConfig = new AppConfig(configuration)
 
-  private lazy val connector: RdsCandeProxyConnector = new RdsCandeProxyConnector(appConfig, httpClientV2)
+  private lazy val connector: RdsCacheProxyConnector = new RdsCacheProxyConnector(appConfig, httpClientV2)
 
   private val sampleFacts = TraderKnownFactsResponse(
     vatRegNumber           = 123456789,
@@ -64,18 +64,18 @@ class RdsCandeProxyConnectorSpec
     missingTraderIndicator = Some("N")
   )
 
-  "RdsCandeProxyConnector.getTraderKnownFacts" should {
+  "RdsCacheProxyConnector.getTraderKnownFacts" should {
 
-    "return the trader known facts when rds-cande-proxy returns 200" in {
+    "return the trader known facts when rds-datacache-proxy returns 200" in {
       stubFor(
-        get(urlEqualTo("/rds-cande-proxy/euvat/traders/getTraderKnownFacts"))
+        get(urlEqualTo("/rds-datacache-proxy/euvat/traders/getKnownFacts"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
       )
 
       connector.getTraderKnownFacts().futureValue shouldBe sampleFacts
     }
 
-    "return error when rds-cande-proxy returns 404" in {
+    "return error when rds-cache-proxy returns 404" in {
       stubFor(
         get(urlEqualTo("/traders/999999999"))
           .willReturn(aResponse().withStatus(404))

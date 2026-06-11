@@ -26,14 +26,14 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RdsCandeProxyConnector @Inject() (
+class RdsCacheProxyConnector @Inject() (
   appConfig: AppConfig,
   http: HttpClientV2
 )(implicit ec: ExecutionContext):
 
-  private val baseUrl: String = appConfig.baseUrl("rds-cande-proxy") + "/rds-cande-proxy"
+  private val baseUrl: String = appConfig.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy"
 
   def getTraderKnownFacts()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] =
     http
-      .get(url"$baseUrl/euvat/traders/getTraderKnownFacts")
+      .get(url"$baseUrl/euvat/traders/getKnownFacts")
       .execute[TraderKnownFactsResponse]

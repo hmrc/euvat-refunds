@@ -21,14 +21,14 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.services.EuVatRefundService
+import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
-class EuVatRefundController @Inject() (
+class EuVatCandeController @Inject() (
   authorise: AuthAction,
-  service: EuVatRefundService,
+  service: EuVatCandeService,
   val cc: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -36,7 +36,7 @@ class EuVatRefundController @Inject() (
 
   def getKnownFacts: Action[AnyContent] =
     authorise.async { implicit request =>
-      service.retrieveDirectDebits(request.identifierValue).map { response =>
+      service.retrieveKnownFacts(request.identifierValue).map { response =>
         Ok(Json.toJson(response))
       }
     }
