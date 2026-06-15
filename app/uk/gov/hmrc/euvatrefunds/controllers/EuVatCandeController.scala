@@ -21,10 +21,11 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
+import uk.gov.hmrc.euvatrefunds.models.requests.LatestApplicationRequest
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class EuVatCandeController @Inject() (
   authorise: AuthAction,
@@ -38,5 +39,17 @@ class EuVatCandeController @Inject() (
     authorise.async { implicit request =>
       service.retrieveKnownFacts(request.identifierValue).map { response =>
         Ok(Json.toJson(response))
+      }
+    }
+
+  def getLatestApplications: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[LatestApplicationRequest]) match {
+        case Some(latestApplicationRequest) =>
+          service.getLatestApplications(latestApplicationRequest).map { response =>
+            Ok(Json.toJson(response))
+          }
+        case None =>
+          Future.successful(BadRequest("Invalid request body"))
       }
     }

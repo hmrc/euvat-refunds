@@ -19,7 +19,8 @@ package uk.gov.hmrc.euvatrefunds.services
 import com.google.inject.Inject
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
-import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.LatestApplicationRequest
+import uk.gov.hmrc.euvatrefunds.models.responses.{LatestApplicationResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -37,6 +38,14 @@ class EuVatCandeService @Inject() (
       euVatStubsConnector.getTraderKnownFacts(vrn)
     } else {
       rdsCandeProxyConnector.getTraderKnownFacts()
+    }
+  }
+
+  def getLatestApplications(latestApplicationRequest: LatestApplicationRequest)(implicit hc: HeaderCarrier): Future[LatestApplicationResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getLatestApplications(latestApplicationRequest)
+    } else {
+      rdsCandeProxyConnector.getLatestApplications(latestApplicationRequest)
     }
   }
 
