@@ -27,11 +27,12 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.AuthenticatedRequest
-import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.{AuthenticatedRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{LatestApplicationResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutures with MockitoSugar {
@@ -70,6 +71,23 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     tradeClass   = Some("8765")
   )
 
+  private val sampleRequest = LatestApplicationRequest(
+    applicantVatRegNumber = "123456789",
+    refundingCountry      = "LV",
+    startDate             = LocalDateTime.of(2025, 2, 1, 0, 0),
+    endDate               = LocalDateTime.of(2025, 5, 31, 0, 0),
+    representativeId      = "rep123",
+    maxNumber             = 10,
+    orderBy               = None,
+    sortOrder             = None,
+    startAt               = None
+  )
+
+  private val sampleResponse = LatestApplicationResponse(
+    applications     = List.empty,
+    totalApplication = 0
+  )
+
   private def callEndpoint() =
     controller.getKnownFacts()(FakeRequest(GET, "/traders/getKnownFacts"))
 
@@ -103,6 +121,31 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(facts.copy(vatRegNumber = 0))
+    }
+  }
+
+  "EuVatCandeController.getLatestApplications" should {
+
+    "return 200 with JSON when service returns latest applications" in {
+      when(service.getLatestApplications(any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = controller.getLatestApplications()(
+        FakeRequest(POST, "/get-latest-application")
+          .withJsonBody(Json.toJson(sampleRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(sampleResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getLatestApplications()(
+        FakeRequest(POST, "/get-latest-application")
+          .withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
     }
   }
 }

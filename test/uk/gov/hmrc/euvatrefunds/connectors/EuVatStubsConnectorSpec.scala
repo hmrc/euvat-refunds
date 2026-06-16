@@ -24,10 +24,12 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.LatestApplicationRequest
+import uk.gov.hmrc.euvatrefunds.models.responses.{LatestApplicationResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class EuVatStubsConnectorSpec
@@ -64,6 +66,23 @@ class EuVatStubsConnectorSpec
     missingTraderIndicator = Some("N")
   )
 
+  private val sampleLatestApplicationResponse = LatestApplicationResponse(
+    applications     = List.empty,
+    totalApplication = 0
+  )
+
+  private val sampleLatestApplicationRequest = LatestApplicationRequest(
+    applicantVatRegNumber = "123456789",
+    refundingCountry      = "LV",
+    startDate             = LocalDateTime.of(2025, 2, 1, 0, 0),
+    endDate               = LocalDateTime.of(2025, 5, 31, 0, 0),
+    representativeId      = "rep123",
+    maxNumber             = 10,
+    orderBy               = None,
+    sortOrder             = None,
+    startAt               = None
+  )
+
   "EuVatStubsConnector.getTraderKnownFacts" should {
 
     "return the trader known facts when euvat-stubs returns 200" in {
@@ -82,6 +101,26 @@ class EuVatStubsConnectorSpec
       )
 
       connector.getTraderKnownFacts("123456789").failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+  "EuVatStubsConnector.getLatestApplications" should {
+
+    "return latest applications when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-latest-application"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleLatestApplicationResponse).toString))
+      )
+
+      connector.getLatestApplications(sampleLatestApplicationRequest).futureValue shouldBe sampleLatestApplicationResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-latest-application"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getLatestApplications(sampleLatestApplicationRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }
