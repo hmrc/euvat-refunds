@@ -26,10 +26,10 @@ class LatestApplicationRequestSpec extends AnyWordSpec with Matchers {
 
   private val sampleRequest = LatestApplicationRequest(
     applicantVatRegNumber = "123456789",
-    refundingCountry      = "LV",
-    startDate             = LocalDateTime.of(2025, 2, 1, 0, 0),
-    endDate               = LocalDateTime.of(2025, 5, 31, 0, 0),
-    representativeId      = "rep123",
+    refundingCountry      = Some("LV"),
+    startDate             = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
+    endDate               = Some(LocalDateTime.of(2025, 5, 31, 0, 0)),
+    representativeId      = Some("rep123"),
     maxNumber             = 10,
     orderBy               = None,
     sortOrder             = None,
@@ -63,7 +63,7 @@ class LatestApplicationRequestSpec extends AnyWordSpec with Matchers {
       val model = json.as[LatestApplicationRequest]
 
       model.applicantVatRegNumber shouldBe "123456789"
-      model.refundingCountry      shouldBe "LV"
+      model.refundingCountry      shouldBe Some("LV")
       model.maxNumber             shouldBe 10
       model.orderBy               shouldBe None
       model.sortOrder             shouldBe None
@@ -75,10 +75,6 @@ class LatestApplicationRequestSpec extends AnyWordSpec with Matchers {
         """
           |{
           |  "applicantVatRegNumber": "123456789",
-          |  "refundingCountry": "LV",
-          |  "startDate": "2025-02-01T00:00:00",
-          |  "endDate": "2025-05-31T00:00:00",
-          |  "representativeId": "rep123",
           |  "maxNumber": 10
           |}
           |""".stripMargin
@@ -86,9 +82,13 @@ class LatestApplicationRequestSpec extends AnyWordSpec with Matchers {
 
       val model = json.as[LatestApplicationRequest]
 
-      model.orderBy   shouldBe None
-      model.sortOrder shouldBe None
-      model.startAt   shouldBe None
+      model.refundingCountry shouldBe None
+      model.startDate        shouldBe None
+      model.endDate          shouldBe None
+      model.representativeId shouldBe None
+      model.orderBy          shouldBe None
+      model.sortOrder        shouldBe None
+      model.startAt          shouldBe None
     }
 
     "round-trip JSON (serialize then deserialize)" in {

@@ -73,10 +73,10 @@ class EuVatStubsConnectorSpec
 
   private val sampleLatestApplicationRequest = LatestApplicationRequest(
     applicantVatRegNumber = "123456789",
-    refundingCountry      = "LV",
-    startDate             = LocalDateTime.of(2025, 2, 1, 0, 0),
-    endDate               = LocalDateTime.of(2025, 5, 31, 0, 0),
-    representativeId      = "rep123",
+    refundingCountry      = Some("LV"),
+    startDate             = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
+    endDate               = Some(LocalDateTime.of(2025, 5, 31, 0, 0)),
+    representativeId      = Some("rep123"),
     maxNumber             = 10,
     orderBy               = None,
     sortOrder             = None,
