@@ -30,7 +30,7 @@ class EuVatCacheService @Inject() (
   configuration: Configuration
 ) {
 
-  private val cacheStubbed: Boolean = configuration.get[Boolean]("feature-switch.rds-cache-stubbed")
+  private val cacheStubbed: Boolean = configuration.get[Boolean]("feature-switch.rds-datacache-stubbed")
 
   def retrieveTraderKnownFacts(vrn: String)(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] = {
     if (cacheStubbed) {

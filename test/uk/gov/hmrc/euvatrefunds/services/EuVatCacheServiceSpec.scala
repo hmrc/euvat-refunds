@@ -42,7 +42,7 @@ class EuVatCacheServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
         Configuration(
           ConfigFactory.parseString(
             s"""
-               |feature-switch.rds-cache-stubbed = false
+               |feature-switch.rds-datacache-stubbed = false
                |""".stripMargin
           )
         )
@@ -69,7 +69,7 @@ class EuVatCacheServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
         Configuration(
           ConfigFactory.parseString(
             s"""
-               |feature-switch.rds-cache-stubbed = true
+               |feature-switch.rds-datacache-stubbed = true
                |""".stripMargin
           )
         )
@@ -97,7 +97,7 @@ class EuVatCacheServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
         Configuration(
           ConfigFactory.parseString(
             s"""
-               |feature-switch.rds-cache-stubbed = false
+               |feature-switch.rds-datacache-stubbed = false
                |""".stripMargin
           )
         )
