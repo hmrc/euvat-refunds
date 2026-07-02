@@ -59,7 +59,7 @@ class RdsCacheProxyConnectorSpec
   private val sampleFacts = TraderKnownFactsResponse(
     vatRegNumber           = 123456789,
     traderName             = Some("ABC GmbH"),
-    postcode               = Some("AB12 3CD"),
+    postCode               = Some("AB12 3CD"),
     tradeClass             = Some("8765"),
     missingTraderIndicator = Some("N")
   )
