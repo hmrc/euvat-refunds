@@ -25,9 +25,11 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
-import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.ApplicationRequest
+import uk.gov.hmrc.euvatrefunds.models.responses.ApplicationResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
@@ -35,7 +37,35 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
   implicit val ec: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  "EuVatCandeService.retrieveDirectDebits" should {
+  "EuVatCandeService.createApplication" should {
+    val appRequest: ApplicationRequest = ApplicationRequest(
+      applicantVatRegNumber         = "123456789",
+      refundingCountryCode          = Some("FR"),
+      periodStartDate               = Some(LocalDateTime.of(2025, 1, 1, 0, 0, 0)),
+      periodEndDate                 = Some(LocalDateTime.of(2025, 3, 31, 23, 59, 59)),
+      applicantEmailAddress         = Some("test@email.com"),
+      applicantTelephoneNumber      = Some("0123456789"),
+      applicationLanguage           = Some("EN"),
+      businessActivityCode1         = Some("7090"),
+      businessActivityCode2         = Some("8903"),
+      businessActivityCode3         = None,
+      representativeId              = None,
+      representativeCountryCode     = None,
+      representativeEmailAddress    = None,
+      representativeIdType          = None,
+      representativeTelephoneNumber = None,
+      bankAccountOwnerName          = None,
+      bankAccountOwnerType          = None,
+      iBanCode                      = None,
+      bicCode                       = None,
+      bankAccountCurrencyCode       = None
+    )
+
+    val expectedResponse: ApplicationResponse = ApplicationResponse(
+      applicationId     = 123456789,
+      applicationNumber = "GB123456789",
+      updateSeqNumber   = 123
+    )
 
     "return the response from the rds cande connector" in {
       lazy val configuration: Configuration =
@@ -50,18 +80,14 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
-      val expectedResponse = TraderKnownFactsResponse(
-        traderName   = Some("Test Trader"),
-        vatRegNumber = 123456
-      )
 
-      when(mockCandeConnector.getTraderKnownFacts()(any()))
+      when(mockCandeConnector.createApplication(any())(any()))
         .thenReturn(Future.successful(expectedResponse))
 
-      val result = service.retrieveKnownFacts("123456").futureValue
+      val result = service.createApplication(appRequest).futureValue
 
       result shouldBe expectedResponse
-      verify(mockCandeConnector, times(1)).getTraderKnownFacts()(any())
+      verify(mockCandeConnector, times(1)).createApplication(any())(any())
     }
 
     "return the response from the stubs connector" in {
@@ -77,18 +103,13 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
-      val expectedResponse = TraderKnownFactsResponse(
-        traderName   = Some("Test Trader"),
-        vatRegNumber = 123456
-      )
 
-      when(mockStubsConnector.getTraderKnownFacts(any())(any()))
+      when(mockStubsConnector.createApplication(any())(any()))
         .thenReturn(Future.successful(expectedResponse))
 
-      val result = service.retrieveKnownFacts("123456").futureValue
+      val result = service.createApplication(appRequest).futureValue
 
       result shouldBe expectedResponse
-      verify(mockStubsConnector, times(1)).getTraderKnownFacts(any())(any())
     }
 
     "propagate an exception from the connector" in {
@@ -105,10 +126,10 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
 
-      when(mockCandeConnector.getTraderKnownFacts()(any()))
+      when(mockCandeConnector.createApplication(any())(any()))
         .thenReturn(Future.failed(failure))
 
-      val result = service.retrieveKnownFacts("123")
+      val result = service.createApplication(appRequest)
 
       whenReady(result.failed) { ex =>
         ex shouldBe failure

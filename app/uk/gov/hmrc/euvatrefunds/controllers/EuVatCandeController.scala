@@ -21,10 +21,11 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
+import uk.gov.hmrc.euvatrefunds.models.requests.ApplicationRequest
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class EuVatCandeController @Inject() (
   authorise: AuthAction,
@@ -34,9 +35,26 @@ class EuVatCandeController @Inject() (
     extends BackendController(cc)
     with Logging:
 
-  def getKnownFacts: Action[AnyContent] =
+  def createApplication: Action[AnyContent] =
     authorise.async { implicit request =>
-      service.retrieveKnownFacts(request.identifierValue).map { response =>
-        Ok(Json.toJson(response))
-      }
+      request.body.asJson match
+        case None =>
+          logger.warn("Missing JSON body for addApplication")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(json) =>
+          json.validate[ApplicationRequest].asOpt match
+            case None =>
+              logger.warn("Invalid JSON structure for ApplicationRequest")
+              Future.successful(BadRequest("Invalid request body"))
+            case Some(applicationRequest) =>
+              service
+                .createApplication(applicationRequest)
+                .map { response =>
+                  logger.info("Application successfully saved")
+                  Ok(Json.toJson(response))
+                }
+                .recover { case ex: Exception =>
+                  logger.error("Error while saving the application in database", ex)
+                  InternalServerError("Failed to save request in database")
+                }
     }
