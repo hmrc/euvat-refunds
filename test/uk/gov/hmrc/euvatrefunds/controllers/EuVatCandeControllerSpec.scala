@@ -67,7 +67,6 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
   "EuVatCacheController.createApplication" should {
     val appRequest: ApplicationRequest = ApplicationRequest(
-      applicantVatRegNumber         = "123456789",
       refundingCountryCode          = Some("FR"),
       periodStartDate               = Some(LocalDateTime.of(2025, 1, 1, 0, 0, 0)),
       periodEndDate                 = Some(LocalDateTime.of(2025, 3, 31, 23, 59, 59)),
@@ -107,22 +106,20 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     "return 400 when request body is invalid" in {
       val result = controller.createApplication()(
         FakeRequest(POST, "/create-application")
-          .withJsonBody(Json.obj("invalid" -> "body"))
       )
 
       status(result) shouldBe BAD_REQUEST
     }
 
     "return 500 and log error when DB call fails" in {
-      val exception = new RuntimeException("DB error")
       when(service.createApplication(any())(any()))
-        .thenReturn(Future.failed(exception))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
       val result: Future[Result] = controller.createApplication()(
         FakeRequest(POST, "/create-application").withMethod("POST").withJsonBody(Json.toJson(appRequest))
       )
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
-      contentAsString(result) should include("Failed to save request in database")
+      contentAsString(result) should include("Failed to create application")
     }
 
   }

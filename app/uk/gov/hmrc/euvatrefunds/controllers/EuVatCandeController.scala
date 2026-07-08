@@ -50,11 +50,11 @@ class EuVatCandeController @Inject() (
               service
                 .createApplication(applicationRequest)
                 .map { response =>
-                  logger.info("Application successfully saved")
+                  logger.info("Application successfully created")
                   Ok(Json.toJson(response))
                 }
                 .recover { case ex: Exception =>
-                  logger.error("Error while saving the application in database", ex)
-                  InternalServerError("Failed to save request in database")
+                  logger.error("Error while creating the application", ex)
+                  InternalServerError("Failed to create application")
                 }
     }

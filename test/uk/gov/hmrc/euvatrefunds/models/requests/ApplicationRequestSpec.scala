@@ -27,7 +27,6 @@ class ApplicationRequestSpec extends AnyWordSpec with Matchers {
 
     "serialize to JSON correctly" in {
       val request = ApplicationRequest(
-        applicantVatRegNumber         = "GB123456",
         refundingCountryCode          = Some("FR"),
         periodStartDate               = Some(LocalDateTime.of(2024, 6, 1, 0, 0)),
         periodEndDate                 = Some(LocalDateTime.of(2024, 6, 30, 23, 59)),
@@ -51,7 +50,6 @@ class ApplicationRequestSpec extends AnyWordSpec with Matchers {
 
       val json = Json.toJson(request)
 
-      (json \ "applicantVatRegNumber").as[String] shouldBe "GB123456"
       (json \ "refundingCountryCode").as[String]  shouldBe "FR"
       (json \ "periodStartDate").as[String]       shouldBe "2024-06-01T00:00:00"
       (json \ "periodEndDate").as[String]         shouldBe "2024-06-30T23:59:00"
@@ -65,7 +63,6 @@ class ApplicationRequestSpec extends AnyWordSpec with Matchers {
 
     "deserialize from JSON correctly" in {
       val json = Json.obj(
-        "applicantVatRegNumber"         -> "GB123456",
         "refundingCountryCode"          -> "FR",
         "periodStartDate"               -> "2024-06-01T00:00:00",
         "periodEndDate"                 -> "2024-06-30T23:59:00",
@@ -87,7 +84,6 @@ class ApplicationRequestSpec extends AnyWordSpec with Matchers {
 
       val result = json.as[ApplicationRequest]
 
-      result.applicantVatRegNumber shouldBe "GB123456"
       result.refundingCountryCode  shouldBe Some("FR")
       result.applicationLanguage   shouldBe Some("EN")
       result.businessActivityCode1 shouldBe Some("A1")
@@ -98,7 +94,6 @@ class ApplicationRequestSpec extends AnyWordSpec with Matchers {
 
     "support round‑trip JSON conversion" in {
       val original = ApplicationRequest(
-        applicantVatRegNumber         = "GB999999",
         refundingCountryCode          = None,
         periodStartDate               = None,
         periodEndDate                 = None,
