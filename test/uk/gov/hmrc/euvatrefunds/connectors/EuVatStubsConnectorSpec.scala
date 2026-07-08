@@ -117,11 +117,11 @@ class EuVatStubsConnectorSpec
 
     "return 200 as successful saved application when euvat-stubs returns 200" in {
       stubFor(
-        post(urlEqualTo("/euvat-stubs/create-application"))
+        post(urlEqualTo("/euvat-stubs/create-application/3333333"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
       )
 
-      connector.createApplication(appRequest).futureValue shouldBe response
+      connector.createApplication(appRequest, "3333333").futureValue shouldBe response
     }
 
     "return error when euvat-stubs returns 404" in {
@@ -130,7 +130,7 @@ class EuVatStubsConnectorSpec
           .willReturn(aResponse().withStatus(404))
       )
 
-      connector.createApplication(appRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+      connector.createApplication(appRequest, "7777777").failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 

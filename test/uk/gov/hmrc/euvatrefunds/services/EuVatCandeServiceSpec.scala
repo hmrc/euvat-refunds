@@ -83,7 +83,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       when(mockCandeConnector.createApplication(any())(any()))
         .thenReturn(Future.successful(expectedResponse))
 
-      val result = service.createApplication(appRequest).futureValue
+      val result = service.createApplication(appRequest, "123456").futureValue
 
       result shouldBe expectedResponse
       verify(mockCandeConnector, times(1)).createApplication(any())(any())
@@ -103,10 +103,10 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
 
-      when(mockStubsConnector.createApplication(any())(any()))
+      when(mockStubsConnector.createApplication(any(), any())(any()))
         .thenReturn(Future.successful(expectedResponse))
 
-      val result = service.createApplication(appRequest).futureValue
+      val result = service.createApplication(appRequest, "9999999").futureValue
 
       result shouldBe expectedResponse
     }
@@ -128,7 +128,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       when(mockCandeConnector.createApplication(any())(any()))
         .thenReturn(Future.failed(failure))
 
-      val result = service.createApplication(appRequest)
+      val result = service.createApplication(appRequest, "6666666")
 
       whenReady(result.failed) { ex =>
         ex shouldBe failure

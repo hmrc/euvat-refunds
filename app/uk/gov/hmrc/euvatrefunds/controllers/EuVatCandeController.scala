@@ -48,7 +48,7 @@ class EuVatCandeController @Inject() (
               Future.successful(BadRequest("Invalid request body"))
             case Some(applicationRequest) =>
               service
-                .createApplication(applicationRequest)
+                .createApplication(applicationRequest, request.identifierValue)
                 .map { response =>
                   logger.info("Application successfully created")
                   Ok(Json.toJson(response))

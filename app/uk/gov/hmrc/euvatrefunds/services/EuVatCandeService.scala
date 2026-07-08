@@ -33,9 +33,9 @@ class EuVatCandeService @Inject() (
 
   private val candeStubbed: Boolean = configuration.get[Boolean]("feature-switch.rds-cande-stubbed")
 
-  def createApplication(request: ApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
+  def createApplication(request: ApplicationRequest, vrn: String)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
     if (candeStubbed) {
-      euVatStubsConnector.createApplication(request)
+      euVatStubsConnector.createApplication(request, vrn)
     } else {
       rdsCandeProxyConnector.createApplication(request)
     }

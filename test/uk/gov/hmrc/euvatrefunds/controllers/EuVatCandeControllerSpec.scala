@@ -94,7 +94,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     )
 
     "return 200 to create refund application" in {
-      when(service.createApplication(any())(any()))
+      when(service.createApplication(any(), any())(any()))
         .thenReturn(Future.successful(response))
 
       val result = controller.createApplication()(FakeRequest(POST, "/create-application").withJsonBody(Json.toJson(appRequest)))
@@ -112,7 +112,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
 
     "return 500 and log error when DB call fails" in {
-      when(service.createApplication(any())(any()))
+      when(service.createApplication(any(), any())(any()))
         .thenReturn(Future.failed(new RuntimeException("DB error")))
       val result: Future[Result] = controller.createApplication()(
         FakeRequest(POST, "/create-application").withMethod("POST").withJsonBody(Json.toJson(appRequest))
