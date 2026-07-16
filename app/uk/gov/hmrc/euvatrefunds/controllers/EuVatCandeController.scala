@@ -37,24 +37,19 @@ class EuVatCandeController @Inject() (
 
   def createApplication: Action[AnyContent] =
     authorise.async { implicit request =>
-      request.body.asJson match
+      request.body.asJson.flatMap(_.asOpt[ApplicationRequest]) match {
         case None =>
-          logger.warn("Missing JSON body for addApplication")
+          logger.warn("Invalid JSON for ApplicationRequest")
           Future.successful(BadRequest("Invalid request body"))
-        case Some(json) =>
-          json.validate[ApplicationRequest].asOpt match
-            case None =>
-              logger.warn("Invalid JSON structure for ApplicationRequest")
-              Future.successful(BadRequest("Invalid request body"))
-            case Some(applicationRequest) =>
-              service
-                .createApplication(applicationRequest, request.identifierValue)
-                .map { response =>
-                  logger.info("Application successfully created")
-                  Ok(Json.toJson(response))
-                }
-                .recover { case ex: Exception =>
-                  logger.error("Error while creating the refund application", ex)
-                  InternalServerError("Failed to create refund application")
-                }
+        case Some(appRequest) =>
+          service
+            .createApplication(appRequest, request.identifierValue)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while creating the refund application", ex)
+              InternalServerError("Failed to create refund application")
+            }
+      }
     }

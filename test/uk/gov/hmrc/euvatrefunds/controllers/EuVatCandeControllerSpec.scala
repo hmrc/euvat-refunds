@@ -39,10 +39,11 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
   implicit val ec: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
-
+//  implicit val actorSystem: ActorSystem = ActorSystem("EuVatCandeControllerSpec")
+//
+//  implicit val materializer: Materializer = SystemMaterializer(actorSystem).materializer
   private val service = mock[EuVatCandeService]
 
-  // Mock AuthAction so it *invokes the block*
   private val authAction: AuthAction = new AuthAction {
     override def parser: BodyParser[AnyContent] = stubControllerComponents().parsers.defaultBodyParser
     override protected def executionContext: ExecutionContext = ec
@@ -87,17 +88,20 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       bicCode                       = None,
       bankAccountCurrencyCode       = None
     )
+
     val response = ApplicationResponse(
-      applicationId     = 123456789,
-      applicationNumber = "GB123456789",
-      updateSeqNumber   = 123
+      applicationId     = 123,
+      applicationNumber = "GB9999999123",
+      updateSeqNumber   = 1
     )
+
+    val request = FakeRequest(POST, "/create-application").withJsonBody(Json.toJson(appRequest))
 
     "return 200 to create refund application" in {
       when(service.createApplication(any(), any())(any()))
         .thenReturn(Future.successful(response))
 
-      val result = controller.createApplication()(FakeRequest(POST, "/create-application").withJsonBody(Json.toJson(appRequest)))
+      val result = controller.createApplication()(request)
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(response)
@@ -108,7 +112,8 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
         FakeRequest(POST, "/create-application")
       )
 
-      status(result) shouldBe BAD_REQUEST
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
     }
 
     "return 500 and log error when DB call fails" in {
@@ -121,6 +126,6 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to create refund application")
     }
-
   }
+
 }
