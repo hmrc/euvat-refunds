@@ -68,7 +68,7 @@ class RdsCacheProxyConnectorSpec
 
     "return the trader known facts when rds-datacache-proxy returns 200" in {
       stubFor(
-        get(urlEqualTo("/rds-datacache-proxy/euvat/traders/getKnownFacts"))
+        get(urlEqualTo("/rds-datacache-proxy/euvat/traders/get-known-facts"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
       )
 

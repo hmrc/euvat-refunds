@@ -70,7 +70,7 @@ class EuVatStubsConnectorSpec
 
     "return the trader known facts when euvat-stubs returns 200" in {
       stubFor(
-        get(urlEqualTo("/euvat-stubs/traders/getKnownFacts/123456789"))
+        get(urlEqualTo("/euvat-stubs/traders/get-known-facts/123456789"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
       )
 

@@ -54,7 +54,7 @@ class EuVatCandeController @Inject() (
                   Ok(Json.toJson(response))
                 }
                 .recover { case ex: Exception =>
-                  logger.error("Error while creating the application", ex)
-                  InternalServerError("Failed to create application")
+                  logger.error("Error while creating the refund application", ex)
+                  InternalServerError("Failed to create refund application")
                 }
     }

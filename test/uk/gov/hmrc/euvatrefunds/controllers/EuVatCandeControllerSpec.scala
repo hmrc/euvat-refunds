@@ -119,7 +119,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       )
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
-      contentAsString(result) should include("Failed to create application")
+      contentAsString(result) should include("Failed to create refund application")
     }
 
   }

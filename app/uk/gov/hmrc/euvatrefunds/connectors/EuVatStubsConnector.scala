@@ -38,7 +38,7 @@ class EuVatStubsConnector @Inject() (
 
   def getTraderKnownFacts(vrn: String)(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] =
     http
-      .get(url"$baseUrl/traders/getKnownFacts/$vrn")
+      .get(url"$baseUrl/traders/get-known-facts/$vrn")
       .execute[TraderKnownFactsResponse]
 
   def createApplication(request: ApplicationRequest, vrn: String)(implicit hc: HeaderCarrier): Future[ApplicationResponse] =

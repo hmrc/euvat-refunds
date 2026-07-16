@@ -1,5 +1,5 @@
 # microservice specific routes
 
-POST      /create-application           uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.createApplication()
+POST      /create-application               uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.createApplication()
 
-GET       /traders/getKnownFacts        uk.gov.hmrc.euvatrefunds.controllers.EuVatCacheController.getTraderKnownFacts()
+GET       /traders/get-known-facts          uk.gov.hmrc.euvatrefunds.controllers.EuVatCacheController.getTraderKnownFacts()
