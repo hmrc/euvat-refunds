@@ -21,7 +21,7 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.ApplicationRequest
+import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, LatestApplicationRequest}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -51,5 +51,17 @@ class EuVatCandeController @Inject() (
               logger.error("Error while creating the refund application", ex)
               InternalServerError("Failed to create refund application")
             }
+      }
+    }
+
+  def getLatestApplications: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[LatestApplicationRequest]) match {
+        case Some(latestApplicationRequest) =>
+          service.getLatestApplications(latestApplicationRequest).map { response =>
+            Ok(Json.toJson(response))
+          }
+        case None =>
+          Future.successful(BadRequest("Invalid request body"))
       }
     }

@@ -27,8 +27,8 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, AuthenticatedRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.ApplicationResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, LatestApplicationResponse}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 
@@ -39,9 +39,6 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
   implicit val ec: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
-//  implicit val actorSystem: ActorSystem = ActorSystem("EuVatCandeControllerSpec")
-//
-//  implicit val materializer: Materializer = SystemMaterializer(actorSystem).materializer
   private val service = mock[EuVatCandeService]
 
   private val authAction: AuthAction = new AuthAction {
@@ -125,6 +122,47 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to create refund application")
+    }
+  }
+
+  "EuVatCandeController.getLatestApplications" should {
+    val sampleRequest = LatestApplicationRequest(
+      applicantVatRegNumber = "123456789",
+      refundingCountry      = Some("LV"),
+      startDate             = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
+      endDate               = Some(LocalDateTime.of(2025, 5, 31, 0, 0)),
+      representativeId      = Some("rep123"),
+      maxNumber             = 10,
+      orderBy               = None,
+      sortOrder             = None,
+      startAt               = None
+    )
+
+    val sampleResponse = LatestApplicationResponse(
+      applications     = List.empty,
+      totalApplication = 0
+    )
+
+    "return 200 with JSON when service returns latest applications" in {
+      when(service.getLatestApplications(any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = controller.getLatestApplications()(
+        FakeRequest(POST, "/get-latest-application")
+          .withJsonBody(Json.toJson(sampleRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(sampleResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getLatestApplications()(
+        FakeRequest(POST, "/get-latest-application")
+          .withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
     }
   }
 
