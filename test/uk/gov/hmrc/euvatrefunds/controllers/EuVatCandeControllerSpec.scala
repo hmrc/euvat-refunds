@@ -27,8 +27,8 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{AuthenticatedRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, LatestApplicationResponse}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 
@@ -39,10 +39,8 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
   implicit val ec: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
-
   private val service = mock[EuVatCandeService]
 
-  // Mock AuthAction so it *invokes the block*
   private val authAction: AuthAction = new AuthAction {
     override def parser: BodyParser[AnyContent] = stubControllerComponents().parsers.defaultBodyParser
     override protected def executionContext: ExecutionContext = ec
@@ -65,66 +63,85 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
   private val controller =
     new EuVatCandeController(authAction, service, stubControllerComponents())
 
-  private val facts = TraderKnownFactsResponse(
-    vatRegNumber = 123456789,
-    traderName   = Some("ABC GmbH"),
-    tradeClass   = Some("8765")
-  )
+  "EuVatCacheController.createApplication" should {
+    val appRequest: ApplicationRequest = ApplicationRequest(
+      refundingCountryCode          = Some("FR"),
+      periodStartDate               = Some(LocalDateTime.of(2025, 1, 1, 0, 0, 0)),
+      periodEndDate                 = Some(LocalDateTime.of(2025, 3, 31, 23, 59, 59)),
+      applicantEmailAddress         = Some("test@email.com"),
+      applicantTelephoneNumber      = Some("0123456789"),
+      applicationLanguage           = Some("EN"),
+      businessActivityCode1         = Some("7090"),
+      businessActivityCode2         = Some("8903"),
+      businessActivityCode3         = None,
+      representativeId              = None,
+      representativeCountryCode     = None,
+      representativeEmailAddress    = None,
+      representativeIdType          = None,
+      representativeTelephoneNumber = None,
+      bankAccountOwnerName          = None,
+      bankAccountOwnerType          = None,
+      iBanCode                      = None,
+      bicCode                       = None,
+      bankAccountCurrencyCode       = None
+    )
 
-  private val sampleRequest = LatestApplicationRequest(
-    applicantVatRegNumber = "123456789",
-    refundingCountry      = Some("LV"),
-    startDate             = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
-    endDate               = Some(LocalDateTime.of(2025, 5, 31, 0, 0)),
-    representativeId      = Some("rep123"),
-    maxNumber             = 10,
-    orderBy               = None,
-    sortOrder             = None,
-    startAt               = None
-  )
+    val response = ApplicationResponse(
+      applicationId     = 123,
+      applicationNumber = "GB9999999123",
+      updateSeqNumber   = 1
+    )
 
-  private val sampleResponse = LatestApplicationResponse(
-    applications     = List.empty,
-    totalApplication = 0
-  )
+    val request = FakeRequest(POST, "/create-application").withJsonBody(Json.toJson(appRequest))
 
-  private def callEndpoint() =
-    controller.getKnownFacts()(FakeRequest(GET, "/traders/getKnownFacts"))
+    "return 200 to create refund application" in {
+      when(service.createApplication(any(), any())(any()))
+        .thenReturn(Future.successful(response))
 
-  "EuVatCacheController.getKnownFacts" should {
-
-    "return 200 with JSON when service returns known facts" in {
-      when(service.retrieveKnownFacts(any())(any()))
-        .thenReturn(Future.successful(facts))
-
-      val result = callEndpoint()
+      val result = controller.createApplication()(request)
 
       status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(facts)
+      contentAsJson(result) shouldBe Json.toJson(response)
     }
 
-    "return 200 even if tradeClass is missing (controller does not throw)" in {
-      when(service.retrieveKnownFacts(any())(any()))
-        .thenReturn(Future.successful(facts.copy(tradeClass = None)))
+    "return 400 when request body is invalid" in {
+      val result = controller.createApplication()(
+        FakeRequest(POST, "/create-application")
+      )
 
-      val result = callEndpoint()
-
-      status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(facts.copy(tradeClass = None))
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
     }
 
-    "return 200 even if VRN is missing (controller does not throw)" in {
-      when(service.retrieveKnownFacts(any())(any()))
-        .thenReturn(Future.successful(facts.copy(vatRegNumber = 0)))
+    "return 500 and log error when DB call fails" in {
+      when(service.createApplication(any(), any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+      val result: Future[Result] = controller.createApplication()(
+        FakeRequest(POST, "/create-application").withMethod("POST").withJsonBody(Json.toJson(appRequest))
+      )
 
-      val result = callEndpoint()
-
-      status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(facts.copy(vatRegNumber = 0))
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to create refund application")
     }
   }
 
   "EuVatCandeController.getLatestApplications" should {
+    val sampleRequest = LatestApplicationRequest(
+      applicantVatRegNumber = "123456789",
+      refundingCountry      = Some("LV"),
+      startDate             = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
+      endDate               = Some(LocalDateTime.of(2025, 5, 31, 0, 0)),
+      representativeId      = Some("rep123"),
+      maxNumber             = 10,
+      orderBy               = None,
+      sortOrder             = None,
+      startAt               = None
+    )
+
+    val sampleResponse = LatestApplicationResponse(
+      applications     = List.empty,
+      totalApplication = 0
+    )
 
     "return 200 with JSON when service returns latest applications" in {
       when(service.getLatestApplications(any())(any()))
@@ -148,4 +165,5 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       status(result) shouldBe BAD_REQUEST
     }
   }
+
 }

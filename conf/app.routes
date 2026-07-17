@@ -1,17 +1,7 @@
 # microservice specific routes
 
-GET       /traders/getTraderKnownFacts          uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getKnownFacts()
-GET       /traders/getKnownFacts                uk.gov.hmrc.euvatrefunds.controllers.EuVatCacheController.getTraderKnownFacts()
+POST      /get-latest-application           uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getLatestApplications
 
-# NOTE: This endpoint uses POST instead of GET despite being a data retrieval operation. This is intentional due to the large number of parameters required by the underlying
-# Oracle stored procedure (applicantVatRegNumber, refundingCountry, startDate, endDate etc.) which would result in excessively long URLs if passed as query parameters.
-# Additionally, dates in URLs require URL encoding which further increases complexity to not expose the application to vulnerability. Pay load:
-#{  "applicantVatRegNumber": "String",
-#     "refundingCountry": "String",
-#     "StartDate": "DATE",
-#     "EndDate": "DATE",
-#     "representativeId": "String",
-#     "orderBy": "String",
-#     "startAt": "String",
-#     "maxNumber": "String" }
-POST      /get-latest-application               uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getLatestApplications
+POST      /create-application               uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.createApplication()
+
+GET       /traders/get-known-facts          uk.gov.hmrc.euvatrefunds.controllers.EuVatCacheController.getTraderKnownFacts()

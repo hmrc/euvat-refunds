@@ -59,7 +59,7 @@ class RdsCacheProxyConnectorSpec
   private val sampleFacts = TraderKnownFactsResponse(
     vatRegNumber           = 123456789,
     traderName             = Some("ABC GmbH"),
-    postcode               = Some("AB12 3CD"),
+    postCode               = Some("AB12 3CD"),
     tradeClass             = Some("8765"),
     missingTraderIndicator = Some("N")
   )
@@ -68,7 +68,7 @@ class RdsCacheProxyConnectorSpec
 
     "return the trader known facts when rds-datacache-proxy returns 200" in {
       stubFor(
-        get(urlEqualTo("/rds-datacache-proxy/euvat/traders/getKnownFacts"))
+        get(urlEqualTo("/rds-datacache-proxy/euvat/traders/get-known-facts"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
       )
 

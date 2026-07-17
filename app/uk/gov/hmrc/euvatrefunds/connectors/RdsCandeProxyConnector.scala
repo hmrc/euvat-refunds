@@ -19,8 +19,8 @@ package uk.gov.hmrc.euvatrefunds.connectors
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.LatestApplicationRequest
-import uk.gov.hmrc.euvatrefunds.models.responses.{LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, LatestApplicationResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -36,10 +36,11 @@ class RdsCandeProxyConnector @Inject() (
 
   private val baseUrl: String = appConfig.baseUrl("rds-cande-proxy") + "/rds-cande-proxy"
 
-  def getTraderKnownFacts()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] =
+  def createApplication(request: ApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationResponse] =
     http
-      .get(url"$baseUrl/euvat/traders/getTraderKnownFacts")
-      .execute[TraderKnownFactsResponse]
+      .post(url"$baseUrl/euvat/create-application")
+      .withBody(Json.toJson(request))
+      .execute[ApplicationResponse]
 
   def getLatestApplications(request: LatestApplicationRequest)(implicit hc: HeaderCarrier): Future[LatestApplicationResponse] =
     http

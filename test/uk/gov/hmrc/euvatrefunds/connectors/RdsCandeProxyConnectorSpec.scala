@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.LatestApplicationRequest
-import uk.gov.hmrc.euvatrefunds.models.responses.{LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, LatestApplicationResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -58,53 +58,70 @@ class RdsCandeProxyConnectorSpec
 
   private lazy val connector: RdsCandeProxyConnector = new RdsCandeProxyConnector(appConfig, httpClientV2)
 
-  private val sampleFacts = TraderKnownFactsResponse(
-    vatRegNumber           = 123456789,
-    traderName             = Some("ABC GmbH"),
-    postcode               = Some("AB12 3CD"),
-    tradeClass             = Some("8765"),
-    missingTraderIndicator = Some("N")
-  )
+  "RdsCandeProxyConnector.createApplication" should {
+    val appRequest: ApplicationRequest = ApplicationRequest(
+      refundingCountryCode          = Some("FR"),
+      periodStartDate               = Some(LocalDateTime.of(2025, 1, 1, 0, 0, 0)),
+      periodEndDate                 = Some(LocalDateTime.of(2025, 3, 31, 23, 59, 59)),
+      applicantEmailAddress         = Some("test@email.com"),
+      applicantTelephoneNumber      = Some("0123456789"),
+      applicationLanguage           = Some("EN"),
+      businessActivityCode1         = Some("7090"),
+      businessActivityCode2         = Some("8903"),
+      businessActivityCode3         = None,
+      representativeId              = None,
+      representativeCountryCode     = None,
+      representativeEmailAddress    = None,
+      representativeIdType          = None,
+      representativeTelephoneNumber = None,
+      bankAccountOwnerName          = None,
+      bankAccountOwnerType          = None,
+      iBanCode                      = None,
+      bicCode                       = None,
+      bankAccountCurrencyCode       = None
+    )
 
-  private val sampleLatestApplicationResponse = LatestApplicationResponse(
-    applications     = List.empty,
-    totalApplication = 0
-  )
-
-  private val sampleLatestApplicationRequest = LatestApplicationRequest(
-    applicantVatRegNumber = "123456789",
-    refundingCountry      = Some("LV"),
-    startDate             = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
-    endDate               = Some(LocalDateTime.of(2025, 5, 31, 0, 0)),
-    representativeId      = Some("rep123"),
-    maxNumber             = 10,
-    orderBy               = None,
-    sortOrder             = None,
-    startAt               = None
-  )
-
-  "RdsCandeProxyConnector.getTraderKnownFacts" should {
-
-    "return the trader known facts when rds-cande-proxy returns 200" in {
+    val expectedResponse: ApplicationResponse = ApplicationResponse(
+      applicationId     = 123456789,
+      applicationNumber = "GB123456789",
+      updateSeqNumber   = 123
+    )
+    "return successful after the refund application is created when rds-cande-proxy returns 200" in {
       stubFor(
-        get(urlEqualTo("/rds-cande-proxy/euvat/traders/getTraderKnownFacts"))
-          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
+        post(urlEqualTo("/rds-cande-proxy/euvat/create-application"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(expectedResponse).toString))
       )
 
-      connector.getTraderKnownFacts().futureValue shouldBe sampleFacts
+      connector.createApplication(appRequest).futureValue shouldBe expectedResponse
     }
 
     "return error when rds-cande-proxy returns 404" in {
       stubFor(
-        get(urlEqualTo("/traders/999999999"))
+        post(urlEqualTo("/invalid-application"))
           .willReturn(aResponse().withStatus(404))
       )
 
-      connector.getTraderKnownFacts().failed.futureValue shouldBe a[UpstreamErrorResponse]
+      connector.createApplication(appRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 
   "RdsCandeProxyConnector.getLatestApplications" should {
+    val sampleLatestApplicationResponse = LatestApplicationResponse(
+      applications     = List.empty,
+      totalApplication = 0
+    )
+
+    val sampleLatestApplicationRequest = LatestApplicationRequest(
+      applicantVatRegNumber = "123456789",
+      refundingCountry      = Some("LV"),
+      startDate             = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
+      endDate               = Some(LocalDateTime.of(2025, 5, 31, 0, 0)),
+      representativeId      = Some("rep123"),
+      maxNumber             = 10,
+      orderBy               = None,
+      sortOrder             = None,
+      startAt               = None
+    )
 
     "return latest applications when rds-cande-proxy returns 200" in {
       stubFor(
