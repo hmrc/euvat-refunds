@@ -24,10 +24,12 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.ApplicationRequest
+import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class EuVatStubsConnectorSpec
@@ -56,19 +58,19 @@ class EuVatStubsConnectorSpec
 
   private lazy val connector: EuVatStubsConnector = new EuVatStubsConnector(appConfig, httpClientV2)
 
-  private val sampleFacts = TraderKnownFactsResponse(
-    vatRegNumber           = 123456789,
-    traderName             = Some("ABC GmbH"),
-    postcode               = Some("AB12 3CD"),
-    tradeClass             = Some("8765"),
-    missingTraderIndicator = Some("N")
-  )
-
   "EuVatStubsConnector.getTraderKnownFacts" should {
+
+    val sampleFacts = TraderKnownFactsResponse(
+      vatRegNumber           = 123456789,
+      traderName             = Some("ABC GmbH"),
+      postCode               = Some("AB12 3CD"),
+      tradeClass             = Some("8765"),
+      missingTraderIndicator = Some("N")
+    )
 
     "return the trader known facts when euvat-stubs returns 200" in {
       stubFor(
-        get(urlEqualTo("/euvat-stubs/traders/getKnownFacts/123456789"))
+        get(urlEqualTo("/euvat-stubs/traders/get-known-facts/123456789"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
       )
 
@@ -84,4 +86,52 @@ class EuVatStubsConnectorSpec
       connector.getTraderKnownFacts("123456789").failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "EuVatStubsConnector.createApplication" should {
+    val appRequest: ApplicationRequest = ApplicationRequest(
+      refundingCountryCode          = Some("FR"),
+      periodStartDate               = Some(LocalDateTime.of(2025, 1, 1, 0, 0, 0)),
+      periodEndDate                 = Some(LocalDateTime.of(2025, 3, 31, 23, 59, 59)),
+      applicantEmailAddress         = Some("test@email.com"),
+      applicantTelephoneNumber      = Some("0123456789"),
+      applicationLanguage           = Some("EN"),
+      businessActivityCode1         = Some("7090"),
+      businessActivityCode2         = Some("8903"),
+      businessActivityCode3         = None,
+      representativeId              = None,
+      representativeCountryCode     = None,
+      representativeEmailAddress    = None,
+      representativeIdType          = None,
+      representativeTelephoneNumber = None,
+      bankAccountOwnerName          = None,
+      bankAccountOwnerType          = None,
+      iBanCode                      = None,
+      bicCode                       = None,
+      bankAccountCurrencyCode       = None
+    )
+    val response = ApplicationResponse(
+      applicationId     = 123456789,
+      applicationNumber = "GB123456789",
+      updateSeqNumber   = 123
+    )
+
+    "return 200 as successful saved application when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/create-application/3333333"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
+      )
+
+      connector.createApplication(appRequest, "3333333").futureValue shouldBe response
+    }
+
+    "return error when euvat-stubs returns 404" in {
+      stubFor(
+        post(urlEqualTo("/application"))
+          .willReturn(aResponse().withStatus(404))
+      )
+
+      connector.createApplication(appRequest, "7777777").failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }

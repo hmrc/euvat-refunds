@@ -35,5 +35,5 @@ class RdsCacheProxyConnector @Inject() (
 
   def getTraderKnownFacts()(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] =
     http
-      .get(url"$baseUrl/euvat/traders/getKnownFacts")
+      .get(url"$baseUrl/euvat/traders/get-known-facts")
       .execute[TraderKnownFactsResponse]

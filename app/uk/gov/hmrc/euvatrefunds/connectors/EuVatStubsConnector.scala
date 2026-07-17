@@ -16,8 +16,11 @@
 
 package uk.gov.hmrc.euvatrefunds.connectors
 
+import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.ApplicationRequest
+import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -35,5 +38,11 @@ class EuVatStubsConnector @Inject() (
 
   def getTraderKnownFacts(vrn: String)(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] =
     http
-      .get(url"$baseUrl/traders/getKnownFacts/$vrn")
+      .get(url"$baseUrl/traders/get-known-facts/$vrn")
       .execute[TraderKnownFactsResponse]
+
+  def createApplication(request: ApplicationRequest, vrn: String)(implicit hc: HeaderCarrier): Future[ApplicationResponse] =
+    http
+      .post(url"$baseUrl/create-application/$vrn")
+      .withBody(Json.toJson(request))
+      .execute[ApplicationResponse]

@@ -30,7 +30,7 @@ class TraderKnownFactsResponseSpec extends AnyWordSpec with Matchers {
         vatRegNumber           = 123456789,
         traderName             = Some("ABC GmbH"),
         addressLine1           = Some("Line 1"),
-        postcode               = Some("AB12 3CD"),
+        postCode               = Some("AB12 3CD"),
         tradeClass             = Some("8765"),
         dateOfRegistration     = Some(LocalDateTime.of(2020, 5, 10, 12, 30)),
         missingTraderIndicator = Some("N"),
@@ -42,7 +42,7 @@ class TraderKnownFactsResponseSpec extends AnyWordSpec with Matchers {
       (json \ "vatRegNumber").as[Int]              shouldBe 123456789
       (json \ "traderName").as[String]             shouldBe "ABC GmbH"
       (json \ "addressLine1").as[String]           shouldBe "Line 1"
-      (json \ "postcode").as[String]               shouldBe "AB12 3CD"
+      (json \ "postCode").as[String]               shouldBe "AB12 3CD"
       (json \ "tradeClass").as[String]             shouldBe "8765"
       (json \ "dateOfRegistration").as[String]     shouldBe "2020-05-10T12:30:00"
       (json \ "missingTraderIndicator").as[String] shouldBe "N"

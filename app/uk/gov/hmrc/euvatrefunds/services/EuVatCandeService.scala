@@ -19,7 +19,8 @@ package uk.gov.hmrc.euvatrefunds.services
 import com.google.inject.Inject
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
-import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
+import uk.gov.hmrc.euvatrefunds.models.requests.ApplicationRequest
+import uk.gov.hmrc.euvatrefunds.models.responses.ApplicationResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -32,11 +33,11 @@ class EuVatCandeService @Inject() (
 
   private val candeStubbed: Boolean = configuration.get[Boolean]("feature-switch.rds-cande-stubbed")
 
-  def retrieveKnownFacts(vrn: String)(implicit hc: HeaderCarrier): Future[TraderKnownFactsResponse] = {
+  def createApplication(request: ApplicationRequest, vrn: String)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
     if (candeStubbed) {
-      euVatStubsConnector.getTraderKnownFacts(vrn)
+      euVatStubsConnector.createApplication(request, vrn)
     } else {
-      rdsCandeProxyConnector.getTraderKnownFacts()
+      rdsCandeProxyConnector.createApplication(request)
     }
   }
 
