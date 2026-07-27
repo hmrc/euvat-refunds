@@ -19,11 +19,11 @@ package uk.gov.hmrc.euvatrefunds.models.requests
 import play.api.libs.json.{Json, OFormat}
 
 case class SupplierVrnCountRequest(
-                                    applicationId: Long,
-                                    itemNumber: Int,
-                                    vatNumber: String,
-                                    invoiceNumber: String
-                                  )
+  applicationId: Long,
+  itemNumber: Int,
+  vatNumber: String,
+  invoiceNumber: String
+)
 
 object SupplierVrnCountRequest {
   implicit val format: OFormat[SupplierVrnCountRequest] = Json.format[SupplierVrnCountRequest]
