@@ -28,8 +28,8 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest, SupplierVrnCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierVrnCountResponse}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 
@@ -229,6 +229,49 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to add purchase")
+    }
+  }
+  "EuVatCandeController.getSupplierVrnCount" should {
+    val vrnCountRequest = SupplierVrnCountRequest(
+      applicationId = 133,
+      itemNumber    = 4,
+      vatNumber     = "500000881",
+      invoiceNumber = "a444"
+    )
+
+    val vrnCountResponse = SupplierVrnCountResponse(duplicateCount = 1)
+
+    "return 200 with JSON when service returns the count" in {
+      when(service.getSupplierVrnCount(any())(any()))
+        .thenReturn(Future.successful(vrnCountResponse))
+
+      val result = controller.getSupplierVrnCount()(
+        FakeRequest(POST, "/get-supplier-vrn-count").withJsonBody(Json.toJson(vrnCountRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(vrnCountResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getSupplierVrnCount()(
+        FakeRequest(POST, "/get-supplier-vrn-count").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 500 and log error when the service fails" in {
+      when(service.getSupplierVrnCount(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getSupplierVrnCount()(
+        FakeRequest(POST, "/get-supplier-vrn-count").withJsonBody(Json.toJson(vrnCountRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to retrieve supplier VRN count")
     }
   }
 }

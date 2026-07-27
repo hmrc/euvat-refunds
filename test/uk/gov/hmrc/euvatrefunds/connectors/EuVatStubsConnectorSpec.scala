@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierVrnCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierVrnCountResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -213,4 +213,32 @@ class EuVatStubsConnectorSpec
       connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+  "EuVatStubsConnector.getSupplierVrnCount" should {
+    val sampleRequest = SupplierVrnCountRequest(
+      applicationId = 133,
+      itemNumber    = 4,
+      vatNumber     = "500000881",
+      invoiceNumber = "a444"
+    )
+    val sampleResponse = SupplierVrnCountResponse(duplicateCount = 1)
+
+    "return the supplier VRN count when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-supplier-vrn-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+
+      connector.getSupplierVrnCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-supplier-vrn-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getSupplierVrnCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }

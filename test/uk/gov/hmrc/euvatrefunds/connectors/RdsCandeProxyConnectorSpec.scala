@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierVrnCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierVrnCountResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -182,6 +182,34 @@ class RdsCandeProxyConnectorSpec
       )
 
       connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
+  "RdsCandeProxyConnector.getSupplierVrnCount" should {
+    val sampleRequest = SupplierVrnCountRequest(
+      applicationId = 133,
+      itemNumber    = 4,
+      vatNumber     = "500000881",
+      invoiceNumber = "a444"
+    )
+    val sampleResponse = SupplierVrnCountResponse(duplicateCount = 1)
+
+    "return the supplier VRN count when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-supplier-vrn-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+
+      connector.getSupplierVrnCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-supplier-vrn-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getSupplierVrnCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }
