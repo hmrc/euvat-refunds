@@ -7,3 +7,5 @@ POST      /create-application               uk.gov.hmrc.euvatrefunds.controllers
 GET       /traders/get-known-facts          uk.gov.hmrc.euvatrefunds.controllers.EuVatCacheController.getTraderKnownFacts()
 
 POST      /add-purchase                     uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addPurchase
+
+POST      /get-supplier-vrn-count           uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSupplierVrnCount

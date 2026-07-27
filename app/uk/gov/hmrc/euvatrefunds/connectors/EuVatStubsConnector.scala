@@ -19,8 +19,8 @@ package uk.gov.hmrc.euvatrefunds.connectors
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierVrnCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierVrnCountResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -58,3 +58,9 @@ class EuVatStubsConnector @Inject() (
       .post(url"$baseUrl/add-purchase")
       .withBody(Json.toJson(request))
       .execute[AddPurchaseResponse]
+
+  def getSupplierVrnCount(request: SupplierVrnCountRequest)(implicit hc: HeaderCarrier): Future[SupplierVrnCountResponse] =
+    http
+      .post(url"$baseUrl/get-supplier-vrn-count")
+      .withBody(Json.toJson(request))
+      .execute[SupplierVrnCountResponse]
