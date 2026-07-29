@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -171,4 +171,46 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.addPurchase" should {
+    val purchaseResponse = AddPurchaseResponse(itemNumber = 4, updateSequenceNumber = 1)
+
+    val purchaseRequest = AddPurchaseRequest(
+      applicationId              = 123456,
+      goodsDescriptionCategory   = Some("1234"),
+      goodsDescriptionText       = Some("Fuel"),
+      purchaseSubcategory        = None,
+      simplifiedInvoiceIndicator = None,
+      supplierName               = None,
+      supplierAddress1           = None,
+      supplierAddress2           = None,
+      supplierAddress3           = None,
+      supplierVatRegNumber       = None,
+      supplierTaxIdentifier      = None,
+      invoiceDate                = None,
+      invoiceNumber              = None,
+      currencyCode               = None,
+      taxableAmount              = None,
+      vatAmount                  = None,
+      deductibleVatAmount        = None,
+      updateSequenceNumber       = None
+    )
+
+    "return purchase Response when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-purchase"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(purchaseResponse).toString))
+      )
+
+      connector.addPurchase(purchaseRequest).futureValue shouldBe purchaseResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-purchase"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }

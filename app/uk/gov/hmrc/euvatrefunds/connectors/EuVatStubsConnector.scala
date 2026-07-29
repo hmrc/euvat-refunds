@@ -55,6 +55,6 @@ class EuVatStubsConnector @Inject() (
 
   def addPurchase(request: AddPurchaseRequest)(implicit hc: HeaderCarrier): Future[AddPurchaseResponse] =
     http
-      .post(url"$baseUrl/euvat/add-purchase")
+      .post(url"$baseUrl/add-purchase")
       .withBody(Json.toJson(request))
       .execute[AddPurchaseResponse]
