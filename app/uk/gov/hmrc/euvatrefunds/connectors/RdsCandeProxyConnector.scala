@@ -19,8 +19,8 @@ package uk.gov.hmrc.euvatrefunds.connectors
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, LatestApplicationResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -47,3 +47,9 @@ class RdsCandeProxyConnector @Inject() (
       .post(url"$baseUrl/euvat/get-latest-application")
       .withBody(Json.toJson(request))
       .execute[LatestApplicationResponse]
+
+  def addPurchase(request: AddPurchaseRequest)(implicit hc: HeaderCarrier): Future[AddPurchaseResponse] =
+    http
+      .post(url"$baseUrl/euvat/add-purchase")
+      .withBody(Json.toJson(request))
+      .execute[AddPurchaseResponse]

@@ -21,7 +21,7 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -63,5 +63,24 @@ class EuVatCandeController @Inject() (
           }
         case None =>
           Future.successful(BadRequest("Invalid request body"))
+      }
+    }
+
+  def addPurchase: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[AddPurchaseRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for AddPurchaseRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(purchaseRequest) =>
+          service
+            .addPurchase(purchaseRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while adding the purchase", ex)
+              InternalServerError("Failed to add purchase")
+            }
       }
     }
