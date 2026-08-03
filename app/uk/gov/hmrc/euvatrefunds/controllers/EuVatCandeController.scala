@@ -21,7 +21,8 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -82,5 +83,17 @@ class EuVatCandeController @Inject() (
               logger.error("Error while adding the purchase", ex)
               InternalServerError("Failed to add purchase")
             }
+      }
+    }
+
+  def getSupplierTaxIdentifierCount: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[SupplierTaxIdentifierCountRequest]) match {
+        case Some(supplierReq) =>
+          service.getSupplierTaxIdentifierCount(supplierReq).map { response =>
+            Ok(Json.toJson(response))
+          }
+        case None =>
+          Future.successful(BadRequest("Invalid request body"))
       }
     }

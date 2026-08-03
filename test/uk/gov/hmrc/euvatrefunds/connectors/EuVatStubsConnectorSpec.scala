@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -211,6 +211,34 @@ class EuVatStubsConnectorSpec
       )
 
       connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+  "EuVatStubsConnector.getSupplierTaxIdentifierCount" should {
+    val sampleRequest = SupplierTaxIdentifierCountRequest(
+      applicationId = 1,
+      itemNumber    = 1,
+      taxIdentifier = "TID123",
+      invoiceNumber = "INV-1"
+    )
+
+    val sampleResponse = SupplierTaxIdentifierCountResponse(duplicateCount = 2)
+
+    "return duplicate count when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-supplier-taxIdentifier-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+
+      connector.getSupplierTaxIdentifierCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-supplier-taxIdentifier-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getSupplierTaxIdentifierCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }

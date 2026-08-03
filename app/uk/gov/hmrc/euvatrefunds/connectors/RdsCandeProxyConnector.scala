@@ -53,3 +53,10 @@ class RdsCandeProxyConnector @Inject() (
       .post(url"$baseUrl/euvat/add-purchase")
       .withBody(Json.toJson(request))
       .execute[AddPurchaseResponse]
+  def getSupplierTaxIdentifierCount(
+    request: uk.gov.hmrc.euvatrefunds.models.requests.SupplierTaxIdentifierCountRequest
+  )(implicit hc: HeaderCarrier): Future[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse] =
+    http
+      .post(url"$baseUrl/euvat/get-supplier-taxIdentifier-count")
+      .withBody(Json.toJson(request))
+      .execute[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse]

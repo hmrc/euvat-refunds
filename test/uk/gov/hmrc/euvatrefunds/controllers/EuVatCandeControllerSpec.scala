@@ -28,8 +28,8 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 
@@ -231,4 +231,33 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       contentAsString(result) should include("Failed to add purchase")
     }
   }
+  "EuVatCandeController.getSupplierTaxIdentifierCount" should {
+    val sampleRequest = SupplierTaxIdentifierCountRequest(
+      applicationId = 1,
+      itemNumber    = 2,
+      taxIdentifier = "TAX-1",
+      invoiceNumber = "INV-1"
+    )
+
+    val sampleResponse = SupplierTaxIdentifierCountResponse(duplicateCount = 4)
+
+    "return 200 with JSON when service returns duplicate count" in {
+      when(service.getSupplierTaxIdentifierCount(any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = controller.getSupplierTaxIdentifierCount()(
+        FakeRequest(POST, "/get-supplier-taxIdentifier-count").withJsonBody(Json.toJson(sampleRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(sampleResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getSupplierTaxIdentifierCount()(FakeRequest(POST, "/get-supplier-taxIdentifier-count"))
+
+      status(result) shouldBe BAD_REQUEST
+    }
+  }
+
 }
