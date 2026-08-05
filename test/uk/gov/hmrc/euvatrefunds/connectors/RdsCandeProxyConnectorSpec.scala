@@ -147,7 +147,7 @@ class RdsCandeProxyConnectorSpec
 
     val purchaseRequest = AddPurchaseRequest(
       applicationId              = 123456,
-      goodsDescriptionCategory   = Some("1234"),
+      goodsDescriptionCategory   = "1",
       goodsDescriptionText       = Some("Fuel"),
       purchaseSubcategory        = None,
       simplifiedInvoiceIndicator = None,
