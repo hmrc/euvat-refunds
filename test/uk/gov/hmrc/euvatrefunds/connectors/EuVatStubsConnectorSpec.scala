@@ -192,7 +192,7 @@ class EuVatStubsConnectorSpec
       taxableAmount              = None,
       vatAmount                  = None,
       deductibleVatAmount        = None,
-      updateSequenceNumber       = None
+      updateSequenceNumber       = 1
     )
 
     "return purchase Response when rds-cande-proxy returns 200" in {

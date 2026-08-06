@@ -251,7 +251,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       taxableAmount              = None,
       vatAmount                  = None,
       deductibleVatAmount        = None,
-      updateSequenceNumber       = None
+      updateSequenceNumber       = 1
     )
 
     val expectedResponse = AddPurchaseResponse(itemNumber = 4, updateSequenceNumber = 1)
