@@ -17,7 +17,8 @@
 package uk.gov.hmrc.euvatrefunds.controllers
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{reset, when}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -27,15 +28,15 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationResponse, LatestApplicationResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
-class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutures with MockitoSugar {
+class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -62,6 +63,11 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
   private val controller =
     new EuVatCandeController(authAction, service, stubControllerComponents())
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(service)
+  }
 
   "EuVatCacheController.createApplication" should {
     val appRequest: ApplicationRequest = ApplicationRequest(
@@ -166,4 +172,63 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.addPurchase" should {
+
+    val purchaseRequest = AddPurchaseRequest(
+      applicationId              = 123456,
+      goodsDescriptionCategory   = "1",
+      goodsDescriptionText       = Some("Fuel"),
+      purchaseSubcategory        = None,
+      simplifiedInvoiceIndicator = None,
+      supplierName               = None,
+      supplierAddress1           = None,
+      supplierAddress2           = None,
+      supplierAddress3           = None,
+      supplierVatRegNumber       = None,
+      supplierTaxIdentifier      = None,
+      invoiceDate                = None,
+      invoiceNumber              = None,
+      currencyCode               = None,
+      taxableAmount              = None,
+      vatAmount                  = None,
+      deductibleVatAmount        = None,
+      updateSequenceNumber       = 1
+    )
+
+    val purchaseResponse = AddPurchaseResponse(itemNumber = 4, updateSequenceNumber = 1)
+
+    "return 200 with JSON when service returns add purchase" in {
+      when(service.addPurchase(any())(any()))
+        .thenReturn(Future.successful(purchaseResponse))
+
+      val result = controller.addPurchase()(
+        FakeRequest(POST, "/add-purchase")
+          .withJsonBody(Json.toJson(purchaseRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(purchaseResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.addPurchase()(
+        FakeRequest(POST, "/add-purchase")
+          .withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.addPurchase(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.addPurchase()(
+        FakeRequest(POST, "/add-purchase").withJsonBody(Json.toJson(purchaseRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to add purchase")
+    }
+  }
 }
