@@ -47,6 +47,14 @@ class EuVatStubsConnector @Inject() (
       .withBody(Json.toJson(request))
       .execute[LatestApplicationResponse]
 
+  def getSupplierTaxIdentifierCount(
+    request: uk.gov.hmrc.euvatrefunds.models.requests.SupplierTaxIdentifierCountRequest
+  )(implicit hc: HeaderCarrier): Future[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse] =
+    http
+      .post(url"$baseUrl/get-supplier-taxIdentifier-count")
+      .withBody(Json.toJson(request))
+      .execute[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse]
+
   def createApplication(request: ApplicationRequest, vrn: String)(implicit hc: HeaderCarrier): Future[ApplicationResponse] =
     http
       .post(url"$baseUrl/create-application/$vrn")
