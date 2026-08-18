@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierVrnCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierVrnCountResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.*
+import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -55,7 +55,6 @@ class RdsCandeProxyConnectorSpec
     )
 
   private lazy val appConfig: AppConfig = new AppConfig(configuration)
-
   private lazy val connector: RdsCandeProxyConnector = new RdsCandeProxyConnector(appConfig, httpClientV2)
 
   "RdsCandeProxyConnector.createApplication" should {
@@ -91,7 +90,6 @@ class RdsCandeProxyConnectorSpec
         post(urlEqualTo("/rds-cande-proxy/euvat/create-application"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(expectedResponse).toString))
       )
-
       connector.createApplication(appRequest).futureValue shouldBe expectedResponse
     }
 
@@ -100,7 +98,6 @@ class RdsCandeProxyConnectorSpec
         post(urlEqualTo("/invalid-application"))
           .willReturn(aResponse().withStatus(404))
       )
-
       connector.createApplication(appRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
@@ -128,7 +125,6 @@ class RdsCandeProxyConnectorSpec
         post(urlEqualTo("/rds-cande-proxy/euvat/get-latest-application"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleLatestApplicationResponse).toString))
       )
-
       connector.getLatestApplications(sampleLatestApplicationRequest).futureValue shouldBe sampleLatestApplicationResponse
     }
 
@@ -137,7 +133,6 @@ class RdsCandeProxyConnectorSpec
         post(urlEqualTo("/rds-cande-proxy/euvat/get-latest-application"))
           .willReturn(aResponse().withStatus(500))
       )
-
       connector.getLatestApplications(sampleLatestApplicationRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
@@ -185,6 +180,32 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.getSupplierTaxIdentifierCount" should {
+    val sampleRequest = SupplierTaxIdentifierCountRequest(
+      applicationId = 1,
+      itemNumber    = 1,
+      taxIdentifier = "TID123",
+      invoiceNumber = "INV-1"
+    )
+    val sampleResponse = SupplierTaxIdentifierCountResponse(duplicateCount = 3)
+
+    "return duplicate count when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-supplier-taxIdentifier-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+      connector.getSupplierTaxIdentifierCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-supplier-taxIdentifier-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+      connector.getSupplierTaxIdentifierCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "RdsCandeProxyConnector.getSupplierVrnCount" should {
     val sampleRequest = SupplierVrnCountRequest(
       applicationId = 133,
@@ -199,7 +220,6 @@ class RdsCandeProxyConnectorSpec
         post(urlEqualTo("/rds-cande-proxy/euvat/get-supplier-vrn-count"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
       )
-
       connector.getSupplierVrnCount(sampleRequest).futureValue shouldBe sampleResponse
     }
 
@@ -208,8 +228,8 @@ class RdsCandeProxyConnectorSpec
         post(urlEqualTo("/rds-cande-proxy/euvat/get-supplier-vrn-count"))
           .willReturn(aResponse().withStatus(500))
       )
-
       connector.getSupplierVrnCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
 }

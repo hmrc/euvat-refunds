@@ -19,8 +19,8 @@ package uk.gov.hmrc.euvatrefunds.services
 import com.google.inject.Inject
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierVrnCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierVrnCountResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.*
+import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -54,6 +54,16 @@ class EuVatCandeService @Inject() (
       euVatStubsConnector.addPurchase(addPurchaseRequest)
     } else {
       rdsCandeProxyConnector.addPurchase(addPurchaseRequest)
+    }
+  }
+
+  def getSupplierTaxIdentifierCount(
+    request: SupplierTaxIdentifierCountRequest
+  )(implicit hc: HeaderCarrier): Future[SupplierTaxIdentifierCountResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getSupplierTaxIdentifierCount(request)
+    } else {
+      rdsCandeProxyConnector.getSupplierTaxIdentifierCount(request)
     }
   }
 
