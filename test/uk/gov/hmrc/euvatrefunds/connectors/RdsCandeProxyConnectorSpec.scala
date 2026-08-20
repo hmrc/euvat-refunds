@@ -212,5 +212,16 @@ class RdsCandeProxyConnectorSpec
 
       connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
+
+    "fail with a 404 UpstreamErrorResponse when rds-cande-proxy returns 404" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/add-purchase"))
+          .willReturn(aResponse().withStatus(404))
+      )
+
+      val failure = connector.addPurchase(purchaseRequest).failed.futureValue
+      failure                                                shouldBe a[UpstreamErrorResponse]
+      failure.asInstanceOf[UpstreamErrorResponse].statusCode shouldBe 404
+    }
   }
 }

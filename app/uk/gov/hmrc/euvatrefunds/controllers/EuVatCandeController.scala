@@ -24,6 +24,7 @@ import uk.gov.hmrc.euvatrefunds.actions.AuthAction
 import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
 import uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -79,9 +80,13 @@ class EuVatCandeController @Inject() (
             .map { response =>
               Ok(Json.toJson(response))
             }
-            .recover { case ex: Exception =>
-              logger.error("Error while adding the purchase", ex)
-              InternalServerError("Failed to add purchase")
+            .recover {
+              case UpstreamErrorResponse(_, NOT_FOUND, _, _) =>
+                logger.warn(s"No refund application record for applicationId ${purchaseRequest.applicationId}")
+                NotFound("No refund application record for the applicationId")
+              case ex: Exception =>
+                logger.error("Error while adding the purchase", ex)
+                InternalServerError("Failed to add purchase")
             }
       }
     }

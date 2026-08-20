@@ -31,7 +31,7 @@ import uk.gov.hmrc.euvatrefunds.actions.AuthAction
 import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, AuthenticatedRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
 import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
-import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
+import uk.gov.hmrc.http.{HeaderCarrier, SessionId, UpstreamErrorResponse}
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
@@ -229,6 +229,18 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to add purchase")
+    }
+
+    "return 404 when the proxy reports no refund application record for the applicationId" in {
+      when(service.addPurchase(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("No refund application record for the applicationId", NOT_FOUND)))
+
+      val result = controller.addPurchase()(
+        FakeRequest(POST, "/add-purchase").withJsonBody(Json.toJson(purchaseRequest))
+      )
+
+      status(result)          shouldBe NOT_FOUND
+      contentAsString(result) shouldBe "No refund application record for the applicationId"
     }
   }
   "EuVatCandeController.getSupplierTaxIdentifierCount" should {
