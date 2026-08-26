@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, GetPurchaseDetailsRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, GetPurchaseDetailsResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse, TraderKnownFactsResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -211,6 +211,48 @@ class EuVatStubsConnectorSpec
       )
 
       connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
+  "EuVatStubsConnector.getPurchaseDetails" should {
+    val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
+
+    val detailsResponse = GetPurchaseDetailsResponse(
+      goodsDescriptionCode       = "1",
+      goodsDescriptionSubCode    = None,
+      goodsDescriptionText       = Some("Fuel"),
+      simplifiedInvoiceIndicator = None,
+      supplierName               = None,
+      supplierAddressLine1       = None,
+      supplierAddressLine2       = None,
+      supplierAddressLine3       = None,
+      supplierVatNumber          = None,
+      supplierTaxIdentifier      = None,
+      invoiceDate                = None,
+      invoiceNumber              = None,
+      currencyCode               = None,
+      taxableAmount              = None,
+      vatAmount                  = None,
+      deductibleVatAmount        = None,
+      updateSequenceNumber       = 1
+    )
+
+    "return the purchase details when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-purchase-details"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(detailsResponse).toString))
+      )
+
+      connector.getPurchaseDetails(detailsRequest).futureValue shouldBe detailsResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-purchase-details"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getPurchaseDetails(detailsRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
   "EuVatStubsConnector.getSupplierTaxIdentifierCount" should {

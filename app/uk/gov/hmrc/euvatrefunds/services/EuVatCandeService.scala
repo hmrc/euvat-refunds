@@ -19,8 +19,8 @@ package uk.gov.hmrc.euvatrefunds.services
 import com.google.inject.Inject
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, GetPurchaseDetailsRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, GetPurchaseDetailsResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -54,6 +54,14 @@ class EuVatCandeService @Inject() (
       euVatStubsConnector.addPurchase(addPurchaseRequest)
     } else {
       rdsCandeProxyConnector.addPurchase(addPurchaseRequest)
+    }
+  }
+
+  def getPurchaseDetails(request: GetPurchaseDetailsRequest)(implicit hc: HeaderCarrier): Future[GetPurchaseDetailsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getPurchaseDetails(request)
+    } else {
+      rdsCandeProxyConnector.getPurchaseDetails(request)
     }
   }
 

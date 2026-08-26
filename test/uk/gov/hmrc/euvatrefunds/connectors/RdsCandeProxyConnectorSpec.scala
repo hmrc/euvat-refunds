@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, GetPurchaseDetailsRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, GetPurchaseDetailsResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -211,6 +211,48 @@ class RdsCandeProxyConnectorSpec
       )
 
       connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
+  "RdsCandeProxyConnector.getPurchaseDetails" should {
+    val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
+
+    val detailsResponse = GetPurchaseDetailsResponse(
+      goodsDescriptionCode       = "1",
+      goodsDescriptionSubCode    = Some("1.1"),
+      goodsDescriptionText       = Some("Fuel"),
+      simplifiedInvoiceIndicator = None,
+      supplierName               = Some("Supplier Ltd"),
+      supplierAddressLine1       = Some("1 High Street"),
+      supplierAddressLine2       = None,
+      supplierAddressLine3       = None,
+      supplierVatNumber          = Some("LV40003567907"),
+      supplierTaxIdentifier      = None,
+      invoiceDate                = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
+      invoiceNumber              = Some("INV-001"),
+      currencyCode               = Some("EUR"),
+      taxableAmount              = Some(BigDecimal("100.50")),
+      vatAmount                  = Some(BigDecimal("21.10")),
+      deductibleVatAmount        = Some(BigDecimal("21.10")),
+      updateSequenceNumber       = 7
+    )
+
+    "return the purchase details when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-purchase-details"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(detailsResponse).toString))
+      )
+
+      connector.getPurchaseDetails(detailsRequest).futureValue shouldBe detailsResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-purchase-details"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getPurchaseDetails(detailsRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }

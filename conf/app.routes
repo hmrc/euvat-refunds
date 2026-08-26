@@ -8,3 +8,4 @@ POST      /get-supplier-taxIdentifier-count uk.gov.hmrc.euvatrefunds.controllers
 GET       /traders/get-known-facts          uk.gov.hmrc.euvatrefunds.controllers.EuVatCacheController.getTraderKnownFacts()
 
 POST      /add-purchase                     uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addPurchase
+POST      /get-purchase-details             uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getPurchaseDetails

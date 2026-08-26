@@ -25,8 +25,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, GetPurchaseDetailsRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, GetPurchaseDetailsResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
@@ -299,6 +299,78 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
         .thenReturn(Future.failed(failure))
 
       whenReady(service.addPurchase(request).failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
+
+  "EuVatCandeService.getPurchaseDetails" should {
+
+    val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
+
+    val detailsResponse = GetPurchaseDetailsResponse(
+      goodsDescriptionCode       = "1",
+      goodsDescriptionSubCode    = None,
+      goodsDescriptionText       = Some("Fuel"),
+      simplifiedInvoiceIndicator = None,
+      supplierName               = None,
+      supplierAddressLine1       = None,
+      supplierAddressLine2       = None,
+      supplierAddressLine3       = None,
+      supplierVatNumber          = None,
+      supplierTaxIdentifier      = None,
+      invoiceDate                = None,
+      invoiceNumber              = None,
+      currencyCode               = None,
+      taxableAmount              = None,
+      vatAmount                  = None,
+      deductibleVatAmount        = None,
+      updateSequenceNumber       = 1
+    )
+
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getPurchaseDetails(any())(any()))
+        .thenReturn(Future.successful(detailsResponse))
+
+      service.getPurchaseDetails(detailsRequest).futureValue shouldBe detailsResponse
+      verify(mockCandeConnector, times(1)).getPurchaseDetails(any())(any())
+    }
+
+    "return the response from the euvat stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getPurchaseDetails(any())(any()))
+        .thenReturn(Future.successful(detailsResponse))
+
+      service.getPurchaseDetails(detailsRequest).futureValue shouldBe detailsResponse
+      verify(mockStubsConnector, times(1)).getPurchaseDetails(any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getPurchaseDetails(any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      whenReady(service.getPurchaseDetails(detailsRequest).failed) { ex =>
         ex shouldBe failure
       }
     }
