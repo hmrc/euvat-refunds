@@ -19,8 +19,8 @@ package uk.gov.hmrc.euvatrefunds.connectors
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, LatestApplicationResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.*
+import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -53,10 +53,17 @@ class RdsCandeProxyConnector @Inject() (
       .post(url"$baseUrl/euvat/add-purchase")
       .withBody(Json.toJson(request))
       .execute[AddPurchaseResponse]
+
   def getSupplierTaxIdentifierCount(
-    request: uk.gov.hmrc.euvatrefunds.models.requests.SupplierTaxIdentifierCountRequest
-  )(implicit hc: HeaderCarrier): Future[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse] =
+    request: SupplierTaxIdentifierCountRequest
+  )(implicit hc: HeaderCarrier): Future[SupplierTaxIdentifierCountResponse] =
     http
       .post(url"$baseUrl/euvat/get-supplier-taxIdentifier-count")
       .withBody(Json.toJson(request))
-      .execute[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse]
+      .execute[SupplierTaxIdentifierCountResponse]
+
+  def getSupplierVrnCount(request: SupplierVrnCountRequest)(implicit hc: HeaderCarrier): Future[SupplierVrnCountResponse] =
+    http
+      .post(url"$baseUrl/euvat/get-supplier-vrn-count")
+      .withBody(Json.toJson(request))
+      .execute[SupplierVrnCountResponse]

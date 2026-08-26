@@ -21,7 +21,7 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
+import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -89,11 +89,37 @@ class EuVatCandeController @Inject() (
   def getSupplierTaxIdentifierCount: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[SupplierTaxIdentifierCountRequest]) match {
-        case Some(supplierReq) =>
-          service.getSupplierTaxIdentifierCount(supplierReq).map { response =>
-            Ok(Json.toJson(response))
-          }
         case None =>
+          logger.warn("Invalid JSON for SupplierTaxIdentifierCountRequest")
           Future.successful(BadRequest("Invalid request body"))
+        case Some(supplierReq) =>
+          service
+            .getSupplierTaxIdentifierCount(supplierReq)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while retrieving supplier tax identifier count", ex)
+              InternalServerError("Failed to retrieve supplier tax identifier count")
+            }
+      }
+    }
+
+  def getSupplierVrnCount: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[SupplierVrnCountRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for SupplierVrnCountRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(vrnCountRequest) =>
+          service
+            .getSupplierVrnCount(vrnCountRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while retrieving supplier VRN count", ex)
+              InternalServerError("Failed to retrieve supplier VRN count")
+            }
       }
     }
