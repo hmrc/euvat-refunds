@@ -304,4 +304,61 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.updatePurchaseDetails" should {
+    val updateRequest = UpdatePurchaseRequest(
+      applicationId               = 123456,
+      itemNumber                  = 1,
+      goodsDescriptionCategory    = "1",
+      goodsDescriptionSubCategory = None,
+      goodsDescriptionText        = Some("Fuel"),
+      simplifiedInvoiceIndicator  = None,
+      supplierName                = None,
+      supplierAddress1            = None,
+      supplierAddress2            = None,
+      supplierAddress3            = None,
+      supplierVatRegNumber        = None,
+      supplierTaxIdentifier       = None,
+      invoiceDate                 = None,
+      invoiceNumber               = None,
+      currencyCode                = None,
+      taxableAmount               = None,
+      vatAmount                   = None,
+      deductibleVatAmount         = None,
+      updateSequenceNumber        = 1
+    )
+
+    val updateResponse = UpdatePurchaseResponse(updateSequenceNumber = 1)
+
+    "return 200 with JSON when service returns update response" in {
+      when(service.updatePurchaseDetails(any())(any()))
+        .thenReturn(Future.successful(updateResponse))
+
+      val result = controller.updatePurchaseDetails()(
+        FakeRequest(PUT, "/update-purchase-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(updateResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.updatePurchaseDetails()(
+        FakeRequest(PUT, "/update-purchase-details").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.updatePurchaseDetails(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.updatePurchaseDetails()(
+        FakeRequest(PUT, "/update-purchase-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to update purchase")
+    }
+  }
 }

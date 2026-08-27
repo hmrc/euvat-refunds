@@ -257,4 +257,48 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.updatePurchaseDetails" should {
+    val updateResponse = UpdatePurchaseResponse(updateSequenceNumber = 2)
+
+    val updateRequest = UpdatePurchaseRequest(
+      applicationId               = 123456,
+      itemNumber                  = 1,
+      goodsDescriptionCategory    = "1",
+      goodsDescriptionSubCategory = None,
+      goodsDescriptionText        = Some("Fuel"),
+      simplifiedInvoiceIndicator  = None,
+      supplierName                = None,
+      supplierAddress1            = None,
+      supplierAddress2            = None,
+      supplierAddress3            = None,
+      supplierVatRegNumber        = None,
+      supplierTaxIdentifier       = None,
+      invoiceDate                 = None,
+      invoiceNumber               = None,
+      currencyCode                = None,
+      taxableAmount               = None,
+      vatAmount                   = None,
+      deductibleVatAmount         = None,
+      updateSequenceNumber        = 1
+    )
+
+    "return update response when euvat-stubs returns 200" in {
+      stubFor(
+        put(urlEqualTo("/euvat-stubs/update-purchase-details"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(updateResponse).toString))
+      )
+
+      connector.updatePurchaseDetails(updateRequest).futureValue shouldBe updateResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        put(urlEqualTo("/euvat-stubs/update-purchase-details"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.updatePurchaseDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }
