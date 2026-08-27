@@ -19,8 +19,8 @@ package uk.gov.hmrc.euvatrefunds.connectors
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, GetPurchaseDetailsRequest, LatestApplicationRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, GetPurchaseDetailsResponse, LatestApplicationResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.*
+import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -47,14 +47,6 @@ class EuVatStubsConnector @Inject() (
       .withBody(Json.toJson(request))
       .execute[LatestApplicationResponse]
 
-  def getSupplierTaxIdentifierCount(
-    request: uk.gov.hmrc.euvatrefunds.models.requests.SupplierTaxIdentifierCountRequest
-  )(implicit hc: HeaderCarrier): Future[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse] =
-    http
-      .post(url"$baseUrl/get-supplier-taxIdentifier-count")
-      .withBody(Json.toJson(request))
-      .execute[uk.gov.hmrc.euvatrefunds.models.responses.SupplierTaxIdentifierCountResponse]
-
   def createApplication(request: ApplicationRequest, vrn: String)(implicit hc: HeaderCarrier): Future[ApplicationResponse] =
     http
       .post(url"$baseUrl/create-application/$vrn")
@@ -72,3 +64,17 @@ class EuVatStubsConnector @Inject() (
       .post(url"$baseUrl/get-purchase-details")
       .withBody(Json.toJson(request))
       .execute[GetPurchaseDetailsResponse]
+
+  def getSupplierTaxIdentifierCount(
+    request: SupplierTaxIdentifierCountRequest
+  )(implicit hc: HeaderCarrier): Future[SupplierTaxIdentifierCountResponse] =
+    http
+      .post(url"$baseUrl/get-supplier-taxIdentifier-count")
+      .withBody(Json.toJson(request))
+      .execute[SupplierTaxIdentifierCountResponse]
+
+  def getSupplierVrnCount(request: SupplierVrnCountRequest)(implicit hc: HeaderCarrier): Future[SupplierVrnCountResponse] =
+    http
+      .post(url"$baseUrl/get-supplier-vrn-count")
+      .withBody(Json.toJson(request))
+      .execute[SupplierVrnCountResponse]

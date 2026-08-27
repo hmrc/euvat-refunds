@@ -25,8 +25,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, GetPurchaseDetailsRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, GetPurchaseDetailsResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.*
+import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
@@ -137,7 +137,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
   }
 
   "EuVatCandeService.getLatestApplications" should {
-
     val request = LatestApplicationRequest(
       applicantVatRegNumber = "123456789",
       refundingCountry      = Some("LV"),
@@ -232,7 +231,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
   }
 
   "EuVatCandeService.addPurchase" should {
-
     val request = AddPurchaseRequest(
       applicationId              = 123456,
       goodsDescriptionCategory   = "1",
@@ -253,7 +251,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       deductibleVatAmount        = None,
       updateSequenceNumber       = 1
     )
-
     val expectedResponse = AddPurchaseResponse(itemNumber = 4, updateSequenceNumber = 1)
 
     "return the response from the rds cande connector" in {
@@ -383,7 +380,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       taxIdentifier = "TID-99",
       invoiceNumber = "INV-99"
     )
-
     val sampleResponse = SupplierTaxIdentifierCountResponse(duplicateCount = 5)
 
     "return the response from the rds cande connector" in {
@@ -456,4 +452,86 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       }
     }
   }
+
+  "EuVatCandeService.getSupplierVrnCount" should {
+    val request = SupplierVrnCountRequest(
+      applicationId = 133,
+      itemNumber    = 4,
+      vatNumber     = "500000881",
+      invoiceNumber = "a444"
+    )
+
+    val expectedResponse = SupplierVrnCountResponse(duplicateCount = 1)
+
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            s"""
+               |feature-switch.rds-cande-stubbed = false
+               |""".stripMargin
+          )
+        )
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getSupplierVrnCount(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      val result = service.getSupplierVrnCount(request).futureValue
+
+      result shouldBe expectedResponse
+      verify(mockCandeConnector, times(1)).getSupplierVrnCount(any())(any())
+    }
+
+    "return the response from the euvat stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            s"""
+               |feature-switch.rds-cande-stubbed = true
+               |""".stripMargin
+          )
+        )
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getSupplierVrnCount(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      val result = service.getSupplierVrnCount(request).futureValue
+
+      result shouldBe expectedResponse
+      verify(mockStubsConnector, times(1)).getSupplierVrnCount(any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            s"""
+               |feature-switch.rds-cande-stubbed = false
+               |""".stripMargin
+          )
+        )
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getSupplierVrnCount(any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      val result = service.getSupplierVrnCount(request)
+
+      whenReady(result.failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
+
 }

@@ -24,8 +24,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.{AddPurchaseRequest, ApplicationRequest, GetPurchaseDetailsRequest, LatestApplicationRequest, SupplierTaxIdentifierCountRequest}
-import uk.gov.hmrc.euvatrefunds.models.responses.{AddPurchaseResponse, ApplicationResponse, GetPurchaseDetailsResponse, LatestApplicationResponse, SupplierTaxIdentifierCountResponse, TraderKnownFactsResponse}
+import uk.gov.hmrc.euvatrefunds.models.requests.*
+import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -89,7 +89,6 @@ class EuVatStubsConnectorSpec
         get(urlEqualTo("/euvat-stubs/traders/get-known-facts/123456789"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleFacts).toString))
       )
-
       connector.getTraderKnownFacts("123456789").futureValue shouldBe sampleFacts
     }
 
@@ -98,19 +97,16 @@ class EuVatStubsConnectorSpec
         get(urlEqualTo("/traders/999999999"))
           .willReturn(aResponse().withStatus(404))
       )
-
       connector.getTraderKnownFacts("123456789").failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 
   "EuVatStubsConnector.getLatestApplications" should {
-
     "return latest applications when euvat-stubs returns 200" in {
       stubFor(
         post(urlEqualTo("/euvat-stubs/get-latest-application"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleLatestApplicationResponse).toString))
       )
-
       connector.getLatestApplications(sampleLatestApplicationRequest).futureValue shouldBe sampleLatestApplicationResponse
     }
 
@@ -119,7 +115,6 @@ class EuVatStubsConnectorSpec
         post(urlEqualTo("/euvat-stubs/get-latest-application"))
           .willReturn(aResponse().withStatus(500))
       )
-
       connector.getLatestApplications(sampleLatestApplicationRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
@@ -157,7 +152,6 @@ class EuVatStubsConnectorSpec
         post(urlEqualTo("/euvat-stubs/create-application/3333333"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
       )
-
       connector.createApplication(appRequest, "3333333").futureValue shouldBe response
     }
 
@@ -166,7 +160,6 @@ class EuVatStubsConnectorSpec
         post(urlEqualTo("/application"))
           .willReturn(aResponse().withStatus(404))
       )
-
       connector.createApplication(appRequest, "7777777").failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
@@ -200,7 +193,6 @@ class EuVatStubsConnectorSpec
         post(urlEqualTo("/euvat-stubs/add-purchase"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(purchaseResponse).toString))
       )
-
       connector.addPurchase(purchaseRequest).futureValue shouldBe purchaseResponse
     }
 
@@ -209,7 +201,6 @@ class EuVatStubsConnectorSpec
         post(urlEqualTo("/euvat-stubs/add-purchase"))
           .willReturn(aResponse().withStatus(500))
       )
-
       connector.addPurchase(purchaseRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
@@ -255,6 +246,33 @@ class EuVatStubsConnectorSpec
       connector.getPurchaseDetails(detailsRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "EuVatStubsConnector.getSupplierVrnCount" should {
+    val sampleRequest = SupplierVrnCountRequest(
+      applicationId = 133,
+      itemNumber    = 4,
+      vatNumber     = "500000881",
+      invoiceNumber = "a444"
+    )
+    val sampleResponse = SupplierVrnCountResponse(duplicateCount = 1)
+
+    "return the supplier VRN count when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-supplier-vrn-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+      connector.getSupplierVrnCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-supplier-vrn-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+      connector.getSupplierVrnCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "EuVatStubsConnector.getSupplierTaxIdentifierCount" should {
     val sampleRequest = SupplierTaxIdentifierCountRequest(
       applicationId = 1,
@@ -262,7 +280,6 @@ class EuVatStubsConnectorSpec
       taxIdentifier = "TID123",
       invoiceNumber = "INV-1"
     )
-
     val sampleResponse = SupplierTaxIdentifierCountResponse(duplicateCount = 2)
 
     "return duplicate count when euvat-stubs returns 200" in {
@@ -270,7 +287,6 @@ class EuVatStubsConnectorSpec
         post(urlEqualTo("/euvat-stubs/get-supplier-taxIdentifier-count"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
       )
-
       connector.getSupplierTaxIdentifierCount(sampleRequest).futureValue shouldBe sampleResponse
     }
 
@@ -279,8 +295,8 @@ class EuVatStubsConnectorSpec
         post(urlEqualTo("/euvat-stubs/get-supplier-taxIdentifier-count"))
           .willReturn(aResponse().withStatus(500))
       )
-
       connector.getSupplierTaxIdentifierCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
 }
