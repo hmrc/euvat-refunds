@@ -180,6 +180,48 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.getPurchaseDetails" should {
+    val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
+
+    val detailsResponse = GetPurchaseDetailsResponse(
+      goodsDescriptionCode       = "1",
+      goodsDescriptionSubCode    = Some("1.1"),
+      goodsDescriptionText       = Some("Fuel"),
+      simplifiedInvoiceIndicator = None,
+      supplierName               = Some("Supplier Ltd"),
+      supplierAddressLine1       = Some("1 High Street"),
+      supplierAddressLine2       = None,
+      supplierAddressLine3       = None,
+      supplierVatNumber          = Some("LV40003567907"),
+      supplierTaxIdentifier      = None,
+      invoiceDate                = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
+      invoiceNumber              = Some("INV-001"),
+      currencyCode               = Some("EUR"),
+      taxableAmount              = Some(BigDecimal("100.50")),
+      vatAmount                  = Some(BigDecimal("21.10")),
+      deductibleVatAmount        = Some(BigDecimal("21.10")),
+      updateSequenceNumber       = 7
+    )
+
+    "return the purchase details when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-purchase-details"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(detailsResponse).toString))
+      )
+
+      connector.getPurchaseDetails(detailsRequest).futureValue shouldBe detailsResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-purchase-details"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getPurchaseDetails(detailsRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "RdsCandeProxyConnector.getSupplierTaxIdentifierCount" should {
     val sampleRequest = SupplierTaxIdentifierCountRequest(
       applicationId = 1,
