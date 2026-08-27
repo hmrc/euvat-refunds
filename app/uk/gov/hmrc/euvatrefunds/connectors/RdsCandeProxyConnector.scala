@@ -60,6 +60,12 @@ class RdsCandeProxyConnector @Inject() (
       .withBody(Json.toJson(request))
       .execute[GetPurchaseDetailsResponse]
 
+  def deletePurchase(request: DeletePurchaseRequest)(implicit hc: HeaderCarrier): Future[DeletePurchaseResponse] =
+    http
+      .delete(url"$baseUrl/euvat/delete-purchase")
+      .withBody(Json.toJson(request))
+      .execute[DeletePurchaseResponse]
+
   def updatePurchaseDetails(request: UpdatePurchaseRequest)(implicit hc: HeaderCarrier): Future[UpdatePurchaseResponse] =
     http
       .put(url"$baseUrl/euvat/update-purchase-details")
