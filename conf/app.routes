@@ -6,5 +6,6 @@ POST      /get-latest-application           uk.gov.hmrc.euvatrefunds.controllers
 POST      /create-application               uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.createApplication()
 POST      /add-purchase                     uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addPurchase
 POST      /get-purchase-details             uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getPurchaseDetails
+DELETE    /delete-purchase                  uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deletePurchase
 POST      /get-supplier-taxIdentifier-count uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSupplierTaxIdentifierCount
 POST      /get-supplier-vrn-count           uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSupplierVrnCount

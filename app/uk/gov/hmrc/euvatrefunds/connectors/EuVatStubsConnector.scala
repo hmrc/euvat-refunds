@@ -65,6 +65,12 @@ class EuVatStubsConnector @Inject() (
       .withBody(Json.toJson(request))
       .execute[GetPurchaseDetailsResponse]
 
+  def deletePurchase(request: DeletePurchaseRequest)(implicit hc: HeaderCarrier): Future[DeletePurchaseResponse] =
+    http
+      .delete(url"$baseUrl/delete-purchase")
+      .withBody(Json.toJson(request))
+      .execute[DeletePurchaseResponse]
+
   def getSupplierTaxIdentifierCount(
     request: SupplierTaxIdentifierCountRequest
   )(implicit hc: HeaderCarrier): Future[SupplierTaxIdentifierCountResponse] =

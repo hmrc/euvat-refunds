@@ -231,6 +231,59 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       contentAsString(result) should include("Failed to add purchase")
     }
   }
+  "EuVatCandeController.deletePurchase" should {
+
+    val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeletePurchaseResponse(updateSequenceNumber = 8)
+
+    "return 200 with JSON when service returns the new update sequence number" in {
+      when(service.deletePurchase(any())(any()))
+        .thenReturn(Future.successful(deleteResponse))
+
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase")
+          .withJsonBody(Json.toJson(deleteRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(deleteResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase")
+          .withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 when the proxy call fails with an UpstreamErrorResponse" in {
+      when(service.deletePurchase(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("bang", 502)))
+
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase").withJsonBody(Json.toJson(deleteRequest))
+      )
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to delete purchase"
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.deletePurchase(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase").withJsonBody(Json.toJson(deleteRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to delete purchase")
+    }
+  }
+
   "EuVatCandeController.getPurchaseDetails" should {
 
     val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
