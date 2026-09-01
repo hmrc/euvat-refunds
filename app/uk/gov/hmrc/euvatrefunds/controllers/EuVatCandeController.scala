@@ -123,3 +123,22 @@ class EuVatCandeController @Inject() (
             }
       }
     }
+
+  def updatePurchaseDetails: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[UpdatePurchaseRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for UpdatePurchaseRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(updateRequest) =>
+          service
+            .updatePurchaseDetails(updateRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while updating the purchase", ex)
+              InternalServerError("Failed to update purchase")
+            }
+      }
+    }

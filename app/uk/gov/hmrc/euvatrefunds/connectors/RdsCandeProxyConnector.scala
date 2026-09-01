@@ -54,6 +54,12 @@ class RdsCandeProxyConnector @Inject() (
       .withBody(Json.toJson(request))
       .execute[AddPurchaseResponse]
 
+  def updatePurchaseDetails(request: UpdatePurchaseRequest)(implicit hc: HeaderCarrier): Future[UpdatePurchaseResponse] =
+    http
+      .put(url"$baseUrl/euvat/update-purchase-details")
+      .withBody(Json.toJson(request))
+      .execute[UpdatePurchaseResponse]
+
   def getSupplierTaxIdentifierCount(
     request: SupplierTaxIdentifierCountRequest
   )(implicit hc: HeaderCarrier): Future[SupplierTaxIdentifierCountResponse] =
