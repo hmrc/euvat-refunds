@@ -86,6 +86,25 @@ class EuVatCandeController @Inject() (
       }
     }
 
+  def getPurchaseDetails: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[GetPurchaseDetailsRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for GetPurchaseDetailsRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(detailsRequest) =>
+          service
+            .getPurchaseDetails(detailsRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while retrieving the purchase details", ex)
+              InternalServerError("Failed to retrieve purchase details")
+            }
+      }
+    }
+
   def getSupplierTaxIdentifierCount: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[SupplierTaxIdentifierCountRequest]) match {

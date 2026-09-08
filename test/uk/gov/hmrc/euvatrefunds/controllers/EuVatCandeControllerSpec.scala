@@ -31,7 +31,7 @@ import uk.gov.hmrc.euvatrefunds.actions.AuthAction
 import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
-import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
+import uk.gov.hmrc.http.{HeaderCarrier, SessionId, UpstreamErrorResponse}
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
@@ -229,6 +229,76 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to add purchase")
+    }
+  }
+  "EuVatCandeController.getPurchaseDetails" should {
+
+    val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
+
+    val detailsResponse = GetPurchaseDetailsResponse(
+      goodsDescriptionCode       = "1",
+      goodsDescriptionSubCode    = Some("1.1"),
+      goodsDescriptionText       = Some("Fuel"),
+      simplifiedInvoiceIndicator = None,
+      supplierName               = Some("Supplier Ltd"),
+      supplierAddressLine1       = Some("1 High Street"),
+      supplierAddressLine2       = None,
+      supplierAddressLine3       = None,
+      supplierVatNumber          = Some("LV40003567907"),
+      supplierTaxIdentifier      = None,
+      invoiceDate                = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
+      invoiceNumber              = Some("INV-001"),
+      currencyCode               = Some("EUR"),
+      taxableAmount              = Some(BigDecimal("100.50")),
+      vatAmount                  = Some(BigDecimal("21.10")),
+      deductibleVatAmount        = Some(BigDecimal("21.10")),
+      updateSequenceNumber       = 7
+    )
+
+    "return 200 with JSON when service returns the purchase details" in {
+      when(service.getPurchaseDetails(any())(any()))
+        .thenReturn(Future.successful(detailsResponse))
+
+      val result = controller.getPurchaseDetails()(
+        FakeRequest(POST, "/get-purchase-details")
+          .withJsonBody(Json.toJson(detailsRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(detailsResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getPurchaseDetails()(
+        FakeRequest(POST, "/get-purchase-details")
+          .withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 when the proxy call fails with an UpstreamErrorResponse" in {
+      when(service.getPurchaseDetails(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("No purchase record", 404)))
+
+      val result = controller.getPurchaseDetails()(
+        FakeRequest(POST, "/get-purchase-details").withJsonBody(Json.toJson(detailsRequest))
+      )
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to retrieve purchase details"
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.getPurchaseDetails(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getPurchaseDetails()(
+        FakeRequest(POST, "/get-purchase-details").withJsonBody(Json.toJson(detailsRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to retrieve purchase details")
     }
   }
 
