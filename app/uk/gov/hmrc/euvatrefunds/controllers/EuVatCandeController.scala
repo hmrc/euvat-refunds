@@ -161,3 +161,22 @@ class EuVatCandeController @Inject() (
             }
       }
     }
+
+  def deleteApplication: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[DeleteApplicationRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for DeleteApplicationRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(deleteRequest) =>
+          service
+            .deleteApplication(deleteRequest)
+            .map { response =>
+              Status(response.status)(response.body)
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while deleting the application", ex)
+              InternalServerError("Failed to delete application")
+            }
+      }
+    }
