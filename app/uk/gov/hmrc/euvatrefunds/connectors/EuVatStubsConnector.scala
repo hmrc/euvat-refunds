@@ -21,7 +21,7 @@ import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
 import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.*
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 
@@ -92,7 +92,3 @@ class EuVatStubsConnector @Inject() (
       .delete(url"$baseUrl/delete-application")
       .withBody(Json.toJson(request))
       .execute[HttpResponse]
-      .map { resp =>
-        if (resp.status == 200) resp
-        else throw UpstreamErrorResponse(s"Delete failed with status ${resp.status}", resp.status)
-      }
