@@ -152,12 +152,27 @@ class EuVatCandeController @Inject() (
         case Some(updateRequest) =>
           service
             .updatePurchaseDetails(updateRequest)
-            .map { response =>
-              Ok(Json.toJson(response))
-            }
+            .map(response => Ok(Json.toJson(response)))
             .recover { case ex: Exception =>
               logger.error("Error while updating the purchase", ex)
               InternalServerError("Failed to update purchase")
+            }
+      }
+    }
+
+  def getPurchaseImportList: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[PurchaseImportListRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for getPurchaseImportList")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(getPurchaseImportRequest) =>
+          service
+            .getPurchaseImportList(getPurchaseImportRequest)
+            .map(response => Ok(Json.toJson(response)))
+            .recover { case e: Exception =>
+              logger.error("Error retrieving purchase import list", e)
+              InternalServerError("Failed to retrieve purchase import list")
             }
       }
     }
