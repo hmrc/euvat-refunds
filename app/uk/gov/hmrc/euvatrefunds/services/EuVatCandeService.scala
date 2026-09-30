@@ -91,4 +91,12 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def getPurchaseImportList(request: PurchaseImportListRequest)(implicit hc: HeaderCarrier): Future[PurchaseImportListResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getPurchaseImportList(request)
+    } else {
+      euVatStubsConnector.getPurchaseImportList(request) // TODO - replace with cande connector
+    }
+  }
+
 }
