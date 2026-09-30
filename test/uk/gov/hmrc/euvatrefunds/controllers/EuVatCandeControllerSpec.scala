@@ -431,4 +431,36 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       contentAsString(result) should include("Failed to update purchase")
     }
   }
+
+  "EuVatCandeController.deleteApplication" should {
+    val deleteRequest = DeleteApplicationRequest(applicationId = 123L, updateSequenceNumber = 1)
+    val deleteResponse = uk.gov.hmrc.http.HttpResponse(200, "")
+
+    "return 200 to delete application" in {
+      when(service.deleteApplication(any())(any()))
+        .thenReturn(Future.successful(deleteResponse))
+
+      val result = controller.deleteApplication()(FakeRequest(DELETE, "/delete-application").withJsonBody(Json.toJson(deleteRequest)))
+
+      status(result)          shouldBe 200
+      contentAsString(result) shouldBe ""
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.deleteApplication()(FakeRequest(DELETE, "/delete-application"))
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 500 and log error when service fails" in {
+      when(service.deleteApplication(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.deleteApplication()(FakeRequest(DELETE, "/delete-application").withJsonBody(Json.toJson(deleteRequest)))
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to delete application")
+    }
+  }
 }

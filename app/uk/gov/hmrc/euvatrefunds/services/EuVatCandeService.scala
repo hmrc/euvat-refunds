@@ -21,6 +21,7 @@ import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
 import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.*
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -70,6 +71,14 @@ class EuVatCandeService @Inject() (
       euVatStubsConnector.updatePurchaseDetails(updateRequest)
     } else {
       rdsCandeProxyConnector.updatePurchaseDetails(updateRequest)
+    }
+  }
+
+  def deleteApplication(request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.deleteApplication(request)
+    } else {
+      rdsCandeProxyConnector.deleteApplication(request)
     }
   }
 
