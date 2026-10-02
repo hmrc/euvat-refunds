@@ -180,6 +180,34 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.addImport" should {
+    val req = AddImportRequest(
+      applicationId            = 123456,
+      goodsDescriptionCategory = "1",
+      updateSequenceNumber     = 1
+    )
+
+    val resp = AddImportResponse(itemNumber = 1, updateSequenceNumber = 1)
+
+    "return response when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/add-import"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString))
+      )
+
+      connector.addImport(req).futureValue shouldBe resp
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/add-import"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.addImport(req).failed.futureValue shouldBe a[Exception]
+    }
+  }
+
   "RdsCandeProxyConnector.getPurchaseDetails" should {
     val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
 

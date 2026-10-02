@@ -10,3 +10,4 @@ POST      /get-supplier-taxIdentifier-count uk.gov.hmrc.euvatrefunds.controllers
 POST      /get-supplier-vrn-count           uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSupplierVrnCount
 PUT       /update-purchase-details          uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.updatePurchaseDetails
 DELETE    /delete-application               uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteApplication
+POST      /add-import                       uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addImport
