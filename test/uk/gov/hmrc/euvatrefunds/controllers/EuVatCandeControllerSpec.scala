@@ -231,6 +231,43 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       contentAsString(result) should include("Failed to add purchase")
     }
   }
+
+  "EuVatCandeController.addImport" should {
+
+    val importRequest = AddImportRequest(
+      applicationId            = 123456,
+      goodsDescriptionCategory = "1",
+      updateSequenceNumber     = 1
+    )
+
+    val importResponse = AddImportResponse(itemNumber = 1, updateSequenceNumber = 1)
+
+    "return 200 with JSON when service returns add import" in {
+      when(service.addImport(any())(any()))
+        .thenReturn(Future.successful(importResponse))
+
+      val result = controller.addImport()(FakeRequest(POST, "/add-import").withJsonBody(Json.toJson(importRequest)))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(importResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.addImport()(FakeRequest(POST, "/add-import").withJsonBody(Json.obj("invalid" -> "body")))
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 and log error when service fails" in {
+      when(service.addImport(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.addImport()(FakeRequest(POST, "/add-import").withJsonBody(Json.toJson(importRequest)))
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to add import")
+    }
+  }
   "EuVatCandeController.getPurchaseDetails" should {
 
     val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
