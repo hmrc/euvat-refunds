@@ -606,4 +606,77 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       }
     }
   }
+
+  "EuVatCandeService.updateApplicationDetails" should {
+    val request = UpdateApplicationDetailsRequest(
+      applicationId              = 133,
+      applicationLanguage        = Some("en"),
+      refundingCountry           = "LV",
+      periodStartDate            = LocalDateTime.of(2011, 6, 1, 0, 0),
+      periodEndDate              = LocalDateTime.of(2011, 10, 31, 23, 59, 59),
+      applicantEmailAddress      = "test@hotmail.com",
+      applicantPhoneNumber       = None,
+      representativeCountry      = None,
+      representativeEmailAddress = None,
+      representativePhoneNumber  = None,
+      bankAccountOwnerName       = None,
+      bankAccountOwnerType       = None,
+      ibanCode                   = None,
+      bicCode                    = None,
+      bankAccountCurrencyCode    = None,
+      businessActivityCode2      = None,
+      businessActivityCode3      = None,
+      cipherText                 = None,
+      encryptionStatus           = None,
+      updateSequenceNumber       = 30
+    )
+
+    val expectedResponse = UpdateApplicationDetailsResponse(updateSequenceNumber = 32)
+
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.updateApplicationDetails(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      service.updateApplicationDetails(request).futureValue shouldBe expectedResponse
+      verify(mockCandeConnector, times(1)).updateApplicationDetails(any())(any())
+    }
+
+    "return the response from the euvat stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.updateApplicationDetails(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      service.updateApplicationDetails(request).futureValue shouldBe expectedResponse
+      verify(mockStubsConnector, times(1)).updateApplicationDetails(any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.updateApplicationDetails(any())(any())).thenReturn(Future.failed(failure))
+
+      whenReady(service.updateApplicationDetails(request).failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
 }
