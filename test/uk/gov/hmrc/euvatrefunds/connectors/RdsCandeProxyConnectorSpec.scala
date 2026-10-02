@@ -317,4 +317,49 @@ class RdsCandeProxyConnectorSpec
       connector.updatePurchaseDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "RdsCandeProxyConnector.updateApplicationDetails" should {
+    val updateResponse = UpdateApplicationDetailsResponse(updateSequenceNumber = 32)
+
+    val updateRequest = UpdateApplicationDetailsRequest(
+      applicationId              = 133,
+      applicationLanguage        = Some("en"),
+      refundingCountry           = "LV",
+      periodStartDate            = LocalDateTime.of(2011, 6, 1, 0, 0),
+      periodEndDate              = LocalDateTime.of(2011, 10, 31, 23, 59, 59),
+      applicantEmailAddress      = "test@hotmail.com",
+      applicantPhoneNumber       = None,
+      representativeCountry      = None,
+      representativeEmailAddress = None,
+      representativePhoneNumber  = None,
+      bankAccountOwnerName       = None,
+      bankAccountOwnerType       = None,
+      ibanCode                   = None,
+      bicCode                    = None,
+      bankAccountCurrencyCode    = None,
+      businessActivityCode2      = None,
+      businessActivityCode3      = None,
+      cipherText                 = None,
+      encryptionStatus           = None,
+      updateSequenceNumber       = 30
+    )
+
+    "return update response when rds-cande-proxy returns 200" in {
+      stubFor(
+        put(urlEqualTo("/rds-cande-proxy/euvat/update-application-details"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(updateResponse).toString))
+      )
+
+      connector.updateApplicationDetails(updateRequest).futureValue shouldBe updateResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        put(urlEqualTo("/rds-cande-proxy/euvat/update-application-details"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.updateApplicationDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }
