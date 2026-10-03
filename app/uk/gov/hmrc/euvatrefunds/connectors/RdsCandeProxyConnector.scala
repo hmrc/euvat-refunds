@@ -79,3 +79,9 @@ class RdsCandeProxyConnector @Inject() (
       .post(url"$baseUrl/euvat/get-supplier-vrn-count")
       .withBody(Json.toJson(request))
       .execute[SupplierVrnCountResponse]
+
+  def getPurchaseImportList(request: PurchaseImportListRequest)(implicit hc: HeaderCarrier): Future[PurchaseImportListResponse] =
+    http
+      .post(url"$baseUrl/euvat/get-purchases-and-imports")
+      .withBody(Json.toJson(request))
+      .execute[PurchaseImportListResponse]

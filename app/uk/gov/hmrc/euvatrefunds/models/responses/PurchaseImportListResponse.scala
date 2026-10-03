@@ -17,8 +17,14 @@
 package uk.gov.hmrc.euvatrefunds.models.responses
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.euvatrefunds.models.PurchaseImport
 
-case class SupplierTaxIdentifierCountResponse(duplicateCount: Int)
+case class PurchaseImportListResponse(
+  purchaseImportList: List[PurchaseImport],
+  totalItems: Int,
+  totalVatClaims: BigDecimal
+)
 
-object SupplierTaxIdentifierCountResponse:
-  given OFormat[SupplierTaxIdentifierCountResponse] = Json.format[SupplierTaxIdentifierCountResponse]
+object PurchaseImportListResponse {
+  implicit val format: OFormat[PurchaseImportListResponse] = Json.format[PurchaseImportListResponse]
+}
