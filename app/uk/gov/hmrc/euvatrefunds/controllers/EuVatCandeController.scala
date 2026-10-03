@@ -166,9 +166,9 @@ class EuVatCandeController @Inject() (
         case None =>
           logger.warn("Invalid JSON for getPurchaseImportList")
           Future.successful(BadRequest("Invalid request body"))
-        case Some(getPurchaseImportRequest) =>
+        case Some(purchaseImportRequest) =>
           service
-            .getPurchaseImportList(getPurchaseImportRequest)
+            .getPurchaseImportList(purchaseImportRequest)
             .map(response => Ok(Json.toJson(response)))
             .recover { case e: Exception =>
               logger.error("Error retrieving purchase import list", e)

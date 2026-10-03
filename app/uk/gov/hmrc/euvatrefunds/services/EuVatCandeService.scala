@@ -95,7 +95,7 @@ class EuVatCandeService @Inject() (
     if (candeStubbed) {
       euVatStubsConnector.getPurchaseImportList(request)
     } else {
-      euVatStubsConnector.getPurchaseImportList(request) // TODO - replace with cande connector
+      rdsCandeProxyConnector.getPurchaseImportList(request)
     }
   }
 

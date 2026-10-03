@@ -344,12 +344,12 @@ class EuVatStubsConnectorSpec
   }
 
   "EuVatStubsConnector.getPurchaseImportList" should {
-    val updateResponse = PurchaseImportListResponse(purchaseImportList = Nil, totalItems = 0)
+    val updateResponse = PurchaseImportListResponse(purchaseImportList = Nil, totalItems = 0, totalVatClaims = BigDecimal(0))
     val updateRequest = PurchaseImportListRequest(applicationId = 123456)
 
     "return update response when euvat-stubs returns 200" in {
       stubFor(
-        post(urlEqualTo("/euvat-stubs/get-purchase-import-list"))
+        post(urlEqualTo("/euvat-stubs/get-purchases-and-imports"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(updateResponse).toString))
       )
 
@@ -358,7 +358,7 @@ class EuVatStubsConnectorSpec
 
     "return error when euvat-stubs returns 500" in {
       stubFor(
-        post(urlEqualTo("/euvat-stubs/get-purchase-import-list"))
+        post(urlEqualTo("/euvat-stubs/get-purchases-and-imports"))
           .willReturn(aResponse().withStatus(500))
       )
 

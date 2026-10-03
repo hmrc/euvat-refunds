@@ -600,7 +600,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
 
       when(mockCandeConnector.updatePurchaseDetails(any())(any())).thenReturn(Future.failed(failure))
-
       whenReady(service.updatePurchaseDetails(request).failed) { ex =>
         ex shouldBe failure
       }
@@ -609,22 +608,22 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
 
   "EuVatCandeService.getPurchaseImportList" should {
     val request = PurchaseImportListRequest(applicationId = 123456)
-    val expectedResponse = PurchaseImportListResponse(Nil, 0)
+    val expectedResponse = PurchaseImportListResponse(Nil, 0, BigDecimal(0))
 
-//    "return the response from the rds cande connector" in {
-//      lazy val configuration: Configuration =
-//        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
-//
-//      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
-//      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
-//      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
-//
-//      when(mockCandeConnector.getPurchaseImportList(any())(any()))
-//        .thenReturn(Future.successful(expectedResponse))
-//
-//      service.getPurchaseImportList(request).futureValue shouldBe expectedResponse
-//      verify(mockCandeConnector, times(1)).getPurchaseImportList(any())(any())
-//    }
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getPurchaseImportList(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      service.getPurchaseImportList(request).futureValue shouldBe expectedResponse
+      verify(mockCandeConnector, times(1)).getPurchaseImportList(any())(any())
+    }
 
     "return the response from the euvat stubs connector" in {
       lazy val configuration: Configuration =
@@ -650,7 +649,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
 
-      when(mockStubsConnector.getPurchaseImportList(any())(any())).thenReturn(Future.failed(failure))
+      when(mockCandeConnector.getPurchaseImportList(any())(any())).thenReturn(Future.failed(failure))
 
       whenReady(service.getPurchaseImportList(request).failed) { ex =>
         ex shouldBe failure
