@@ -21,9 +21,9 @@ import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
 import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.*
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -79,3 +79,11 @@ class RdsCandeProxyConnector @Inject() (
       .post(url"$baseUrl/euvat/get-supplier-vrn-count")
       .withBody(Json.toJson(request))
       .execute[SupplierVrnCountResponse]
+
+  def deleteApplication(
+    request: DeleteApplicationRequest
+  )(implicit hc: HeaderCarrier): Future[HttpResponse] =
+    http
+      .delete(url"$baseUrl/euvat/delete-application")
+      .withBody(Json.toJson(request))
+      .execute[HttpResponse]
