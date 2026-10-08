@@ -323,7 +323,7 @@ class RdsCandeProxyConnectorSpec
 
     val updateRequest = UpdateApplicationDetailsRequest(
       applicationId              = 133,
-      applicationLanguage        = Some("en"),
+      applicationLanguage        = "en",
       refundingCountry           = "LV",
       periodStartDate            = LocalDateTime.of(2011, 6, 1, 0, 0),
       periodEndDate              = LocalDateTime.of(2011, 10, 31, 23, 59, 59),
