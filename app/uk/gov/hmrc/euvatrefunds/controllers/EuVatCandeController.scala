@@ -105,6 +105,25 @@ class EuVatCandeController @Inject() (
       }
     }
 
+  def deletePurchase: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[DeletePurchaseRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for DeletePurchaseRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(deleteRequest) =>
+          service
+            .deletePurchase(deleteRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while deleting the purchase", ex)
+              InternalServerError("Failed to delete purchase")
+            }
+      }
+    }
+
   def getSupplierTaxIdentifierCount: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[SupplierTaxIdentifierCountRequest]) match {

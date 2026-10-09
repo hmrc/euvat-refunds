@@ -222,6 +222,30 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.deletePurchase" should {
+    val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeletePurchaseResponse(updateSequenceNumber = 8)
+
+    "return the new update sequence number when rds-cande-proxy returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-purchase"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deletePurchase(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-purchase"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deletePurchase(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "RdsCandeProxyConnector.getSupplierTaxIdentifierCount" should {
     val sampleRequest = SupplierTaxIdentifierCountRequest(
       applicationId = 1,
