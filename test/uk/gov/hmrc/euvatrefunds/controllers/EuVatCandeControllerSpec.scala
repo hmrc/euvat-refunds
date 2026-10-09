@@ -501,4 +501,76 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.updateApplicationDetails" should {
+    val updateRequest = UpdateApplicationDetailsRequest(
+      applicationId              = 133,
+      applicationLanguage        = "en",
+      refundingCountry           = "LV",
+      periodStartDate            = LocalDateTime.of(2011, 6, 1, 0, 0),
+      periodEndDate              = LocalDateTime.of(2011, 10, 31, 23, 59, 59),
+      applicantEmailAddress      = "test@hotmail.com",
+      applicantPhoneNumber       = Some("01952233299"),
+      representativeCountry      = None,
+      representativeEmailAddress = None,
+      representativePhoneNumber  = None,
+      bankAccountOwnerName       = None,
+      bankAccountOwnerType       = None,
+      ibanCode                   = None,
+      bicCode                    = None,
+      bankAccountCurrencyCode    = None,
+      businessActivityCode2      = None,
+      businessActivityCode3      = None,
+      cipherText                 = None,
+      encryptionStatus           = None,
+      updateSequenceNumber       = 30
+    )
+
+    val updateResponse = UpdateApplicationDetailsResponse(updateSequenceNumber = 32)
+
+    "return 200 with JSON when service returns update response" in {
+      when(service.updateApplicationDetails(any())(any()))
+        .thenReturn(Future.successful(updateResponse))
+
+      val result = controller.updateApplicationDetails()(
+        FakeRequest(PUT, "/update-application-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(updateResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.updateApplicationDetails()(
+        FakeRequest(PUT, "/update-application-details").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 500 when the proxy call fails with an UpstreamErrorResponse" in {
+      when(service.updateApplicationDetails(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("Lost update", 500)))
+
+      val result = controller.updateApplicationDetails()(
+        FakeRequest(PUT, "/update-application-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to update application details"
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.updateApplicationDetails(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.updateApplicationDetails()(
+        FakeRequest(PUT, "/update-application-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to update application details")
+    }
+  }
+
 }
