@@ -699,7 +699,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
     }
   }
 
-
   "EuVatCandeService.updateApplicationDetails" should {
     val request = UpdateApplicationDetailsRequest(
       applicationId              = 133,
