@@ -600,7 +600,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
 
       when(mockCandeConnector.updatePurchaseDetails(any())(any())).thenReturn(Future.failed(failure))
-
       whenReady(service.updatePurchaseDetails(request).failed) { ex =>
         ex shouldBe failure
       }
@@ -609,9 +608,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
 
   "EuVatCandeService.deleteApplication" should {
     val request = DeleteApplicationRequest(applicationId = 123L, updateSequenceNumber = 1)
-
     val expectedResponse = uk.gov.hmrc.http.HttpResponse(200, "")
-
     "return the response from the rds cande connector" in {
       lazy val configuration: Configuration =
         Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
@@ -619,7 +616,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
-
       when(mockCandeConnector.deleteApplication(any())(any()))
         .thenReturn(Future.successful(expectedResponse))
 
@@ -634,7 +630,6 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
-
       when(mockStubsConnector.deleteApplication(any())(any()))
         .thenReturn(Future.successful(expectedResponse))
 
@@ -646,16 +641,62 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       val failure = new RuntimeException("Connector failed")
       lazy val configuration: Configuration =
         Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
-
       val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
       val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
       val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
-
       when(mockCandeConnector.deleteApplication(any())(any())).thenReturn(Future.failed(failure))
-
       whenReady(service.deleteApplication(request).failed) { ex =>
         ex shouldBe failure
       }
     }
   }
+
+  "EuVatCandeService.getPurchaseImportList" should {
+    val request = PurchaseImportListRequest(applicationId = 123456)
+    val expectedResponse = PurchaseImportListResponse(Nil, 0, BigDecimal(0))
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getPurchaseImportList(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      service.getPurchaseImportList(request).futureValue shouldBe expectedResponse
+      verify(mockCandeConnector, times(1)).getPurchaseImportList(any())(any())
+    }
+
+    "return the response from the euvat stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getPurchaseImportList(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      service.getPurchaseImportList(request).futureValue shouldBe expectedResponse
+      verify(mockStubsConnector, times(1)).getPurchaseImportList(any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getPurchaseImportList(any())(any())).thenReturn(Future.failed(failure))
+      whenReady(service.getPurchaseImportList(request).failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
+
 }

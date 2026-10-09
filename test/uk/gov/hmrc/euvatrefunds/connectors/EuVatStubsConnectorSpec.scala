@@ -343,4 +343,27 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.getPurchaseImportList" should {
+    val updateResponse = PurchaseImportListResponse(purchaseImportList = Nil, totalItems = 0, totalVatClaims = BigDecimal(0))
+    val updateRequest = PurchaseImportListRequest(applicationId = 123456)
+
+    "return update response when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-purchases-and-imports"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(updateResponse).toString))
+      )
+
+      connector.getPurchaseImportList(updateRequest).futureValue shouldBe updateResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-purchases-and-imports"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getPurchaseImportList(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }

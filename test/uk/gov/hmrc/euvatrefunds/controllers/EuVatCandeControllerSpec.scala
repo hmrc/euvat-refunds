@@ -432,6 +432,43 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.getPurchaseImportList" should {
+    val updateRequest = PurchaseImportListRequest(applicationId = 123456)
+    val updateResponse = PurchaseImportListResponse(Nil, 0, BigDecimal(0))
+
+    "return 200 with JSON when service returns update response" in {
+      when(service.getPurchaseImportList(any())(any()))
+        .thenReturn(Future.successful(updateResponse))
+
+      val result = controller.getPurchaseImportList()(
+        FakeRequest(POST, "/get-purchases-and-imports").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(updateResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getPurchaseImportList()(
+        FakeRequest(POST, "/get-purchases-and-imports").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.getPurchaseImportList(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getPurchaseImportList()(
+        FakeRequest(POST, "/get-purchases-and-imports").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to retrieve purchase import list")
+    }
+  }
+
   "EuVatCandeController.deleteApplication" should {
     val deleteRequest = DeleteApplicationRequest(applicationId = 123L, updateSequenceNumber = 1)
     val deleteResponse = uk.gov.hmrc.http.HttpResponse(200, "")
@@ -463,4 +500,5 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       contentAsString(result) should include("Failed to delete application")
     }
   }
+
 }
