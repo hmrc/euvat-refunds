@@ -373,6 +373,84 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
     }
   }
 
+  "EuVatCandeService.getImportDetails" should {
+
+    val sampleResponse = GetImportDetailsResponse(
+      applicationId               = 123456L,
+      itemNumber                  = 4,
+      issuingDate                 = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
+      supplierName                = Some("Supplier Ltd"),
+      supplierAddressLine1        = Some("1 High Street"),
+      supplierAddressLine2        = None,
+      supplierAddressLine3        = None,
+      supplierCountryCode         = Some("LV"),
+      goodsDescriptionCategory    = Some("1"),
+      currencyCode                = Some("EUR"),
+      taxableAmount               = Some(BigDecimal("100.50")),
+      vatAmount                   = Some(BigDecimal("21.10")),
+      deductibleVatAmount         = Some(BigDecimal("21.10")),
+      updateDateTime              = Some(LocalDateTime.of(2025, 3, 15, 12, 0)),
+      hasSadReferenceNumber       = Some("N"),
+      sadReferenceNumber          = Some("SAD-123"),
+      referenceInformation        = Some("Ref Info"),
+      goodsDescriptionText        = Some("Fuel"),
+      goodsDescriptionSubcategory = Some("1.1")
+    )
+
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getImportDetails(any(), any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = service.getImportDetails(123456L, 4).futureValue
+
+      result shouldBe sampleResponse
+      verify(mockCandeConnector, times(1)).getImportDetails(any(), any())(any())
+    }
+
+    "return the response from the stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getImportDetails(any(), any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = service.getImportDetails(123456L, 4).futureValue
+
+      result shouldBe sampleResponse
+      verify(mockStubsConnector, times(1)).getImportDetails(any(), any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getImportDetails(any(), any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      val result = service.getImportDetails(123456L, 4)
+
+      whenReady(result.failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
+
   "EuVatCandeService.getSupplierTaxIdentifierCount" should {
     val sampleRequest = SupplierTaxIdentifierCountRequest(
       applicationId = 10,
