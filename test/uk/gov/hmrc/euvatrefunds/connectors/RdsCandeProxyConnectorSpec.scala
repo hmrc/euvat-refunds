@@ -362,4 +362,47 @@ class RdsCandeProxyConnectorSpec
       connector.updateApplicationDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "RdsCandeProxyConnector.getImportDetails" should {
+    val detailsResponse = GetImportDetailsResponse(
+      applicationId               = 123456L,
+      itemNumber                  = 4,
+      issuingDate                 = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
+      supplierName                = Some("Supplier Ltd"),
+      supplierAddressLine1        = Some("1 High Street"),
+      supplierAddressLine2        = Some("Riga"),
+      supplierAddressLine3        = None,
+      supplierCountryCode         = Some("LV"),
+      goodsDescriptionCategory    = "1",
+      currencyCode                = Some("EUR"),
+      taxableAmount               = Some(BigDecimal("100.50")),
+      vatAmount                   = Some(BigDecimal("21.10")),
+      deductibleVatAmount         = Some(BigDecimal("21.10")),
+      hasSadReferenceNumber       = Some("N"),
+      sadReferenceNumber          = Some("SAD-123"),
+      referenceInformation        = Some("Ref Info"),
+      goodsDescriptionText        = Some("Fuel"),
+      goodsDescriptionSubcategory = Some("1.1"),
+      updateSequenceNumber        = 42,
+      periodStartDate             = LocalDateTime.of(2025, 1, 1, 0, 0)
+    )
+
+    "return the import details when rds-cande-proxy returns 200" in {
+      stubFor(
+        get(urlEqualTo(s"/rds-cande-proxy/euvat/get-import-details/${detailsResponse.applicationId}/${detailsResponse.itemNumber}"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(detailsResponse).toString))
+      )
+
+      connector.getImportDetails(detailsResponse.applicationId, detailsResponse.itemNumber).futureValue shouldBe detailsResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        get(urlEqualTo(s"/rds-cande-proxy/euvat/get-import-details/123456/4"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getImportDetails(123456L, 4).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }

@@ -71,6 +71,11 @@ class EuVatStubsConnector @Inject() (
       .withBody(Json.toJson(request))
       .execute[GetPurchaseDetailsResponse]
 
+  def getImportDetails(applicationId: Long, itemNumber: Int)(implicit hc: HeaderCarrier): Future[GetImportDetailsResponse] =
+    http
+      .get(url"$baseUrl/get-import-details/$applicationId/$itemNumber")
+      .execute[GetImportDetailsResponse]
+
   def getSupplierTaxIdentifierCount(
     request: SupplierTaxIdentifierCountRequest
   )(implicit hc: HeaderCarrier): Future[SupplierTaxIdentifierCountResponse] =

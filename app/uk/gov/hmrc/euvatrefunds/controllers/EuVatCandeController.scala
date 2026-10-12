@@ -105,6 +105,19 @@ class EuVatCandeController @Inject() (
       }
     }
 
+  def getImportDetails(applicationId: Long, itemNumber: Int): Action[AnyContent] =
+    authorise.async { implicit request =>
+      service
+        .getImportDetails(applicationId, itemNumber)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving import details", ex)
+          InternalServerError("Failed to retrieve import details")
+        }
+    }
+
   def getSupplierTaxIdentifierCount: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[SupplierTaxIdentifierCountRequest]) match {
