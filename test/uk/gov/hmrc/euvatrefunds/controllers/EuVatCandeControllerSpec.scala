@@ -506,6 +506,48 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.getImportDetails" should {
+    val response = GetImportDetailsResponse(
+      applicationId               = 123456L,
+      itemNumber                  = 4,
+      issuingDate                 = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
+      supplierName                = Some("Supplier Ltd"),
+      supplierAddressLine1        = Some("1 High Street"),
+      supplierAddressLine2        = None,
+      supplierAddressLine3        = None,
+      supplierCountryCode         = Some("LV"),
+      goodsDescriptionCategory    = "1",
+      currencyCode                = Some("EUR"),
+      taxableAmount               = Some(BigDecimal("100.50")),
+      vatAmount                   = Some(BigDecimal("21.10")),
+      deductibleVatAmount         = Some(BigDecimal("21.10")),
+      hasSadReferenceNumber       = Some("N"),
+      sadReferenceNumber          = Some("SAD-123"),
+      referenceInformation        = Some("Ref Info"),
+      goodsDescriptionText        = Some("Fuel"),
+      goodsDescriptionSubcategory = Some("1.1"),
+      updateSequenceNumber        = 42,
+      periodStartDate             = LocalDateTime.of(2025, 1, 1, 0, 0)
+    )
+
+    "return 200 with JSON when service returns the import details" in {
+      when(service.getImportDetails(any(), any())(any())).thenReturn(Future.successful(response))
+
+      val result = controller.getImportDetails(123456L, 4)(FakeRequest(GET, s"/get-import-details/123456/4"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return 500 when service fails" in {
+      when(service.getImportDetails(any(), any())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getImportDetails(123456L, 4)(FakeRequest(GET, s"/get-import-details/123456/4"))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
   "EuVatCandeController.deleteApplication" should {
     val deleteRequest = DeleteApplicationRequest(applicationId = 123L, updateSequenceNumber = 1)
     val deleteResponse = uk.gov.hmrc.http.HttpResponse(200, "")
