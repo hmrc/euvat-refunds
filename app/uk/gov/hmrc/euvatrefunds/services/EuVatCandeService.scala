@@ -82,6 +82,14 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def addImport(addImportRequest: AddImportRequest)(implicit hc: HeaderCarrier): Future[AddImportResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.addImport(addImportRequest)
+    } else {
+      rdsCandeProxyConnector.addImport(addImportRequest)
+    }
+  }
+
   def getSupplierTaxIdentifierCount(
     request: SupplierTaxIdentifierCountRequest
   )(implicit hc: HeaderCarrier): Future[SupplierTaxIdentifierCountResponse] = {
