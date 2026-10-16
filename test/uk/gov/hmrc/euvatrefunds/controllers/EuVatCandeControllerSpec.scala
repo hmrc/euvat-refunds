@@ -233,8 +233,6 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
   }
   "EuVatCandeController.getPurchaseDetails" should {
 
-    val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
-
     val detailsResponse = GetPurchaseDetailsResponse(
       goodsDescriptionCode       = "1",
       goodsDescriptionSubCode    = Some("1.1"),
@@ -259,30 +257,20 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       when(service.getPurchaseDetails(any())(any()))
         .thenReturn(Future.successful(detailsResponse))
 
-      val result = controller.getPurchaseDetails()(
-        FakeRequest(POST, "/get-purchase-details")
-          .withJsonBody(Json.toJson(detailsRequest))
+      val result = controller.getPurchaseDetails(123456, 4)(
+        FakeRequest(GET, "/get-purchase-details/123456/4")
       )
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(detailsResponse)
     }
 
-    "return 400 when request body is invalid" in {
-      val result = controller.getPurchaseDetails()(
-        FakeRequest(POST, "/get-purchase-details")
-          .withJsonBody(Json.obj("invalid" -> "body"))
-      )
-
-      status(result) shouldBe BAD_REQUEST
-    }
-
     "return 500 when the proxy call fails with an UpstreamErrorResponse" in {
       when(service.getPurchaseDetails(any())(any()))
         .thenReturn(Future.failed(UpstreamErrorResponse("No purchase record", 404)))
 
-      val result = controller.getPurchaseDetails()(
-        FakeRequest(POST, "/get-purchase-details").withJsonBody(Json.toJson(detailsRequest))
+      val result = controller.getPurchaseDetails(123456, 4)(
+        FakeRequest(GET, "/get-purchase-details/123456/4")
       )
 
       status(result)          shouldBe INTERNAL_SERVER_ERROR
@@ -293,8 +281,8 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       when(service.getPurchaseDetails(any())(any()))
         .thenReturn(Future.failed(new RuntimeException("DB error")))
 
-      val result = controller.getPurchaseDetails()(
-        FakeRequest(POST, "/get-purchase-details").withJsonBody(Json.toJson(detailsRequest))
+      val result = controller.getPurchaseDetails(123456, 4)(
+        FakeRequest(GET, "/get-purchase-details/123456/4")
       )
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
