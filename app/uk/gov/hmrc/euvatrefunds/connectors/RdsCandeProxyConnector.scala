@@ -99,3 +99,9 @@ class RdsCandeProxyConnector @Inject() (
       .delete(url"$baseUrl/euvat/delete-application")
       .withBody(Json.toJson(request))
       .execute[HttpResponse]
+
+  def deleteImport(request: DeleteImportRequest)(implicit hc: HeaderCarrier): Future[DeleteImportResponse] =
+    http
+      .delete(url"$baseUrl/euvat/delete-import")
+      .withBody(Json.toJson(request))
+      .execute[DeleteImportResponse]

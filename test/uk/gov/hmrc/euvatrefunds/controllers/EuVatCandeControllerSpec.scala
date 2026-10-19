@@ -573,4 +573,37 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.deleteImport" should {
+    val deleteRequest = DeleteImportRequest(applicationId = 123456L, itemNumber = 1, updateSequenceNumber = 1)
+    val deleteResponse = DeleteImportResponse(updateSequenceNumber = 1)
+
+    "return 200 with JSON when service returns delete response" in {
+      when(service.deleteImport(any())(any()))
+        .thenReturn(Future.successful(deleteResponse))
+      val result = controller.deleteImport()(
+        FakeRequest(DELETE, "/delete-import").withJsonBody(Json.toJson(deleteRequest))
+      )
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(deleteResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.deleteImport()(
+        FakeRequest(DELETE, "/delete-import").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 500 and log error when service fails" in {
+      when(service.deleteImport(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+      val result = controller.deleteImport()(
+        FakeRequest(DELETE, "/delete-import").withJsonBody(Json.toJson(deleteRequest))
+      )
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to delete import")
+    }
+  }
+
 }

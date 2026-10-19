@@ -411,4 +411,32 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.deleteImport" should {
+    val deleteRequest = DeleteImportRequest(
+      applicationId        = 123456L,
+      itemNumber           = 1,
+      updateSequenceNumber = 1
+    )
+
+    val deleteResponse = DeleteImportResponse(updateSequenceNumber = 1)
+
+    "return the response when euvat-stubs returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-import"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deleteImport(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-import"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deleteImport(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }
