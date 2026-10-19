@@ -433,4 +433,32 @@ class RdsCandeProxyConnectorSpec
       connector.getImportDetails(123456L, 4).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "RdsCandeProxyConnector.deleteImport" should {
+    val deleteRequest = DeleteImportRequest(
+      applicationId        = 123456L,
+      itemNumber           = 1,
+      updateSequenceNumber = 1
+    )
+
+    val deleteResponse = DeleteImportResponse(updateSequenceNumber = 1)
+
+    "return the response when rds-cande-proxy returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-import"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deleteImport(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-import"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deleteImport(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }
