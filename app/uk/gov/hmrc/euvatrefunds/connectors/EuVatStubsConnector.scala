@@ -127,3 +127,9 @@ class EuVatStubsConnector @Inject() (
       .post(url"$baseUrl/get-sad-reference-count")
       .withBody(Json.toJson(request))
       .execute[SadReferenceCountResponse]
+
+  def deleteImport(request: DeleteImportRequest)(implicit hc: HeaderCarrier): Future[DeleteImportResponse] =
+    http
+      .delete(url"$baseUrl/delete-import")
+      .withBody(Json.toJson(request))
+      .execute[DeleteImportResponse]
