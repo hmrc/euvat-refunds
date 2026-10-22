@@ -134,4 +134,12 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def deleteImport(request: DeleteImportRequest)(implicit hc: HeaderCarrier): Future[DeleteImportResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.deleteImport(request)
+    } else {
+      rdsCandeProxyConnector.deleteImport(request)
+    }
+  }
+
 }
