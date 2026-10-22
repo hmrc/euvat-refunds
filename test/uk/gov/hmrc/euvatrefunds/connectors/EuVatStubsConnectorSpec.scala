@@ -478,5 +478,5 @@ class EuVatStubsConnectorSpec
 
       connector.deleteImport(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
-	}
+  }
 }

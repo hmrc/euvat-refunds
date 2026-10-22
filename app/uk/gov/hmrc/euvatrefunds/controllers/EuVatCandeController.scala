@@ -238,6 +238,7 @@ class EuVatCandeController @Inject() (
           service
             .deleteImport(deleteRequest)
             .map { response =>
+              logger.info(s"Delete import request: ${Json.toJson(deleteRequest)}, response: ${Json.toJson(response)}")
               Ok(Json.toJson(response))
             }
             .recover { case ex: Exception =>

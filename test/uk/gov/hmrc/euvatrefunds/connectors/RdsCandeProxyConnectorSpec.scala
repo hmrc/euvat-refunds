@@ -406,7 +406,7 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
-    "RdsCandeProxyConnector.deleteImport" should {
+  "RdsCandeProxyConnector.deleteImport" should {
     val deleteRequest = DeleteImportRequest(
       applicationId        = 123456L,
       itemNumber           = 1,
@@ -422,13 +422,13 @@ class RdsCandeProxyConnectorSpec
       )
 
       connector.deleteImport(deleteRequest).futureValue shouldBe deleteResponse
-	  }
+    }
 
     "return error when rds-cande-proxy returns 500" in {
       stubFor(
         delete(urlEqualTo("/rds-cande-proxy/euvat/delete-import"))
           .willReturn(aResponse().withStatus(500))
-        )
+      )
 
       connector.deleteImport(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
