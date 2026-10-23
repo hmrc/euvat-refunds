@@ -275,6 +275,30 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.deletePurchase" should {
+    val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeletePurchaseResponse(updateSequenceNumber = 8)
+
+    "return the new update sequence number when euvat-stubs returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-purchase"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deletePurchase(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-purchase"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deletePurchase(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "EuVatStubsConnector.getSupplierVrnCount" should {
     val sampleRequest = SupplierVrnCountRequest(
       applicationId = 133,
@@ -477,6 +501,34 @@ class EuVatStubsConnectorSpec
           .willReturn(aResponse().withStatus(500))
       )
       connector.getImportDetails(123456L, 4).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
+  "EuVatStubsConnector.deleteImport" should {
+    val deleteRequest = DeleteImportRequest(
+      applicationId        = 123456L,
+      itemNumber           = 1,
+      updateSequenceNumber = 1
+    )
+
+    val deleteResponse = DeleteImportResponse(updateSequenceNumber = 1)
+
+    "return the response when euvat-stubs returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-import"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deleteImport(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-import"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deleteImport(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }

@@ -86,23 +86,19 @@ class EuVatCandeController @Inject() (
       }
     }
 
-  def getPurchaseDetails: Action[AnyContent] =
+  def getPurchaseDetails(applicationId: Long, itemNumber: Int): Action[AnyContent] =
     authorise.async { implicit request =>
-      request.body.asJson.flatMap(_.asOpt[GetPurchaseDetailsRequest]) match {
-        case None =>
-          logger.warn("Invalid JSON for GetPurchaseDetailsRequest")
-          Future.successful(BadRequest("Invalid request body"))
-        case Some(detailsRequest) =>
-          service
-            .getPurchaseDetails(detailsRequest)
-            .map { response =>
-              Ok(Json.toJson(response))
-            }
-            .recover { case ex: Exception =>
-              logger.error("Error while retrieving the purchase details", ex)
-              InternalServerError("Failed to retrieve purchase details")
-            }
-      }
+      val detailsRequest = GetPurchaseDetailsRequest(applicationId = applicationId, itemNumber = itemNumber)
+
+      service
+        .getPurchaseDetails(detailsRequest)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving the purchase details", ex)
+          InternalServerError("Failed to retrieve purchase details")
+        }
     }
 
   def getImportDetails(applicationId: Long, itemNumber: Int): Action[AnyContent] =
@@ -243,6 +239,45 @@ class EuVatCandeController @Inject() (
             .recover { case ex: Exception =>
               logger.error("Error while updating the application details", ex)
               InternalServerError("Failed to update application details")
+            }
+      }
+    }
+
+  def deleteImport: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[DeleteImportRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for DeleteImportRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(deleteRequest) =>
+          service
+            .deleteImport(deleteRequest)
+            .map { response =>
+              logger.info(s"Delete import request: ${Json.toJson(deleteRequest)}, response: ${Json.toJson(response)}")
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while deleting the import", ex)
+              InternalServerError("Failed to delete import")
+            }
+      }
+    }
+
+  def deletePurchase: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[DeletePurchaseRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for DeletePurchaseRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(deleteRequest) =>
+          service
+            .deletePurchase(deleteRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while deleting the purchase", ex)
+              InternalServerError("Failed to delete purchase")
             }
       }
     }

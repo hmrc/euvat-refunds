@@ -115,3 +115,15 @@ class EuVatStubsConnector @Inject() (
       .delete(url"$baseUrl/delete-application")
       .withBody(Json.toJson(request))
       .execute[HttpResponse]
+
+  def deleteImport(request: DeleteImportRequest)(implicit hc: HeaderCarrier): Future[DeleteImportResponse] =
+    http
+      .delete(url"$baseUrl/delete-import")
+      .withBody(Json.toJson(request))
+      .execute[DeleteImportResponse]
+
+  def deletePurchase(request: DeletePurchaseRequest)(implicit hc: HeaderCarrier): Future[DeletePurchaseResponse] =
+    http
+      .delete(url"$baseUrl/delete-purchase")
+      .withBody(Json.toJson(request))
+      .execute[DeletePurchaseResponse]
