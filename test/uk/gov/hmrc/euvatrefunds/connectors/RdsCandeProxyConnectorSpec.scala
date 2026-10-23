@@ -180,6 +180,34 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.addImport" should {
+    val req = AddImportRequest(
+      applicationId            = 123456,
+      goodsDescriptionCategory = "1",
+      updateSequenceNumber     = 1
+    )
+
+    val resp = AddImportResponse(itemNumber = 1, updateSequenceNumber = 1)
+
+    "return response when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/add-import"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString))
+      )
+
+      connector.addImport(req).futureValue shouldBe resp
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/add-import"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.addImport(req).failed.futureValue shouldBe a[Exception]
+    }
+  }
+
   "RdsCandeProxyConnector.getPurchaseDetails" should {
     val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
 
@@ -219,6 +247,30 @@ class RdsCandeProxyConnectorSpec
       )
 
       connector.getPurchaseDetails(detailsRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
+  "RdsCandeProxyConnector.deletePurchase" should {
+    val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeletePurchaseResponse(updateSequenceNumber = 8)
+
+    "return the new update sequence number when rds-cande-proxy returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-purchase"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deletePurchase(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-purchase"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deletePurchase(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 

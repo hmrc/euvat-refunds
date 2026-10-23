@@ -156,6 +156,25 @@ class EuVatCandeController @Inject() (
       }
     }
 
+  def addImport: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[AddImportRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for AddImportRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(importRequest) =>
+          service
+            .addImport(importRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while adding the import", ex)
+              InternalServerError("Failed to add import")
+            }
+      }
+    }
+
   def updatePurchaseDetails: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[UpdatePurchaseRequest]) match {
@@ -244,6 +263,25 @@ class EuVatCandeController @Inject() (
             .recover { case ex: Exception =>
               logger.error("Error while deleting the import", ex)
               InternalServerError("Failed to delete import")
+            }
+      }
+    }
+
+  def deletePurchase: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[DeletePurchaseRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for DeletePurchaseRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(deleteRequest) =>
+          service
+            .deletePurchase(deleteRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while deleting the purchase", ex)
+              InternalServerError("Failed to delete purchase")
             }
       }
     }

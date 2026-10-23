@@ -205,6 +205,34 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.addImport" should {
+    val req = AddImportRequest(
+      applicationId            = 123456,
+      goodsDescriptionCategory = "1",
+      updateSequenceNumber     = 1
+    )
+
+    val resp = AddImportResponse(itemNumber = 1, updateSequenceNumber = 1)
+
+    "return response when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-import"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(resp).toString))
+      )
+
+      connector.addImport(req).futureValue shouldBe resp
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-import"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.addImport(req).failed.futureValue shouldBe a[Exception]
+    }
+  }
+
   "EuVatStubsConnector.getPurchaseDetails" should {
     val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
 
@@ -244,6 +272,30 @@ class EuVatStubsConnectorSpec
       )
 
       connector.getPurchaseDetails(detailsRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
+  "EuVatStubsConnector.deletePurchase" should {
+    val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeletePurchaseResponse(updateSequenceNumber = 8)
+
+    "return the new update sequence number when euvat-stubs returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-purchase"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deletePurchase(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-purchase"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deletePurchase(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 
