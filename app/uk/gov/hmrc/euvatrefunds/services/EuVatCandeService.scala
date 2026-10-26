@@ -84,6 +84,14 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def updateImportDetails(updateRequest: UpdateImportRequest)(implicit hc: HeaderCarrier): Future[UpdateImportResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.updateImportDetails(updateRequest)
+    } else {
+      rdsCandeProxyConnector.updateImportDetails(updateRequest)
+    }
+  }
+
   def updatePurchaseDetails(updateRequest: UpdatePurchaseRequest)(implicit hc: HeaderCarrier): Future[UpdatePurchaseResponse] = {
     if (candeStubbed) {
       euVatStubsConnector.updatePurchaseDetails(updateRequest)

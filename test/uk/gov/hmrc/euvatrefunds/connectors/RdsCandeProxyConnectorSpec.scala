@@ -433,4 +433,71 @@ class RdsCandeProxyConnectorSpec
       connector.getImportDetails(123456L, 4).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "RdsCandeProxyConnector.updateImportDetails" should {
+    val updateResponse = UpdateImportResponse(updateSequenceNumber = 2)
+
+    val updateRequest = UpdateImportRequest(
+      applicationId               = 404,
+      itemNumber                  = 4,
+      goodsDescriptionCategory    = "10",
+      goodsDescriptionSubCategory = Some("10.4.1"),
+      goodsDescriptionText        = Some("office stationery and consumables"),
+      hasSadReferenceNumber       = Some("Y"),
+      sadReferenceNumber          = Some("SAD123456789"),
+      referenceInformation        = Some("Import declaration reference"),
+      supplierName                = Some("Finnish International"),
+      supplierAddressLine1        = Some("356 High Street"),
+      supplierAddressLine2        = Some("Rochdale"),
+      supplierAddressLine3        = Some("England"),
+      supplierCountryCode         = Some("GB"),
+      issuingDate                 = Some(LocalDateTime.of(2026, 5, 14, 0, 0)),
+      currencyCode                = Some("EUR"),
+      taxableAmount               = Some(BigDecimal(1000)),
+      vatAmount                   = Some(BigDecimal(99)),
+      deductibleVatAmount         = Some(BigDecimal(40)),
+      updateSequenceNumber        = 1
+    )
+
+    "return update response when rds-cande-proxy returns 200" in {
+      stubFor(
+        put(urlEqualTo("/rds-cande-proxy/euvat/update-importation-details"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(updateResponse).toString))
+      )
+
+      connector.updateImportDetails(updateRequest).futureValue shouldBe updateResponse
+    }
+
+    "send the request as JSON in the body" in {
+      stubFor(
+        put(urlEqualTo("/rds-cande-proxy/euvat/update-importation-details"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(updateResponse).toString))
+      )
+
+      connector.updateImportDetails(updateRequest).futureValue
+
+      verify(
+        putRequestedFor(urlEqualTo("/rds-cande-proxy/euvat/update-importation-details"))
+          .withRequestBody(equalToJson(Json.toJson(updateRequest).toString))
+      )
+    }
+
+    "return error when rds-cande-proxy returns 400" in {
+      stubFor(
+        put(urlEqualTo("/rds-cande-proxy/euvat/update-importation-details"))
+          .willReturn(aResponse().withStatus(400))
+      )
+
+      connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        put(urlEqualTo("/rds-cande-proxy/euvat/update-importation-details"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }
