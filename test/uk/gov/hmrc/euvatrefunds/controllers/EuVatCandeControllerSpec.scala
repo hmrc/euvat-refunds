@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.euvatrefunds.controllers
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as mockitoEq}
 import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -847,4 +847,43 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       contentAsString(result) should include("Failed to delete import")
     }
   }
+  "EuVatCandeController.getReferenceInformationCount" should {
+    val url = "/get-reference-information-count"
+    val request = ReferenceInfoCountRequest(applicationId = 20, itemNumber = 2)
+    val response = ReferenceInfoCountResponse(1)
+
+    "return 200 for a POST reference information count from service" in {
+      when(service.getReferenceInformationCount(mockitoEq(request))(any[HeaderCarrier]()))
+        .thenReturn(Future.successful(response))
+
+      val result = controller.getReferenceInformationCount()(
+        FakeRequest(POST, url).withJsonBody(Json.toJson(request)).withHeaders()
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getReferenceInformationCount()(
+        FakeRequest(POST, url).withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 500 and error message when service call fails" in {
+      when(service.getReferenceInformationCount(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("Service error")))
+
+      val result = controller.getReferenceInformationCount()(
+        FakeRequest(POST, url).withJsonBody(Json.toJson(request))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to get reference information count")
+    }
+  }
+
 }

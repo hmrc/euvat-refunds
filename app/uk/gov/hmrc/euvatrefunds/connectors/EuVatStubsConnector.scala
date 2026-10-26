@@ -139,3 +139,11 @@ class EuVatStubsConnector @Inject() (
       .delete(url"$baseUrl/delete-import")
       .withBody(Json.toJson(request))
       .execute[DeleteImportResponse]
+
+  def getReferenceInformationCount(
+    request: ReferenceInfoCountRequest
+  )(implicit hc: HeaderCarrier): Future[ReferenceInfoCountResponse] =
+    http
+      .post(url"$baseUrl/get-reference-information-count")
+      .withBody(Json.toJson(request))
+      .execute[ReferenceInfoCountResponse]

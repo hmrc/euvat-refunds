@@ -134,3 +134,11 @@ class RdsCandeProxyConnector @Inject() (
       .delete(url"$baseUrl/euvat/delete-import")
       .withBody(Json.toJson(request))
       .execute[DeleteImportResponse]
+
+  def getReferenceInformationCount(
+    request: ReferenceInfoCountRequest
+  )(implicit hc: HeaderCarrier): Future[ReferenceInfoCountResponse] =
+    http
+      .post(url"$baseUrl/euvat/get-reference-information-count")
+      .withBody(Json.toJson(request))
+      .execute[ReferenceInfoCountResponse]
