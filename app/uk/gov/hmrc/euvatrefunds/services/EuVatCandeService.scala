@@ -134,4 +134,12 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def deletePurchase(request: DeletePurchaseRequest)(implicit hc: HeaderCarrier): Future[DeletePurchaseResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.deletePurchase(request)
+    } else {
+      rdsCandeProxyConnector.deletePurchase(request)
+    }
+  }
+
 }
