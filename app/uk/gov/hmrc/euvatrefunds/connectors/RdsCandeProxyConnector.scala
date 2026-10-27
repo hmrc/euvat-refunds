@@ -116,3 +116,9 @@ class RdsCandeProxyConnector @Inject() (
       .delete(url"$baseUrl/euvat/delete-purchase")
       .withBody(Json.toJson(request))
       .execute[DeletePurchaseResponse]
+
+  def getSadReferenceCount(request: SadReferenceCountRequest)(implicit hc: HeaderCarrier): Future[SadReferenceCountResponse] =
+    http
+      .post(url"$baseUrl/euvat/get-sad-reference-count")
+      .withBody(Json.toJson(request))
+      .execute[SadReferenceCountResponse]

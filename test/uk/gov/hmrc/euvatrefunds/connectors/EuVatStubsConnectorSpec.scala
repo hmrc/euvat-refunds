@@ -503,4 +503,29 @@ class EuVatStubsConnectorSpec
       connector.getImportDetails(123456L, 4).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "EuVatStubsConnector.getSadReferenceCount" should {
+    val sampleRequest = SadReferenceCountRequest(
+      applicationId      = 133,
+      itemNumber         = 4,
+      sadReferenceNumber = "500000881"
+    )
+    val sampleResponse = SadReferenceCountResponse(duplicateCount = 1)
+
+    "return the SAD reference count when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-sad-reference-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+      connector.getSadReferenceCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-sad-reference-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+      connector.getSadReferenceCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }

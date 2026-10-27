@@ -142,4 +142,11 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def getSadReferenceCount(request: SadReferenceCountRequest)(implicit hc: HeaderCarrier): Future[SadReferenceCountResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getSadReferenceCount(request)
+    } else {
+      rdsCandeProxyConnector.getSadReferenceCount(request)
+    }
+  }
 }

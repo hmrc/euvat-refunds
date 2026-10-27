@@ -265,3 +265,22 @@ class EuVatCandeController @Inject() (
             }
       }
     }
+
+  def getSadReferenceCount: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[SadReferenceCountRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for SadReferenceCountRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(sadReferenceCountRequest) =>
+          service
+            .getSadReferenceCount(sadReferenceCountRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while retrieving SAD reference count", ex)
+              InternalServerError("Failed to retrieve SAD reference count")
+            }
+      }
+    }
