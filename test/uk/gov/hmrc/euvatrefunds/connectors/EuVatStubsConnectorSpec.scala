@@ -275,6 +275,30 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.deletePurchase" should {
+    val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeletePurchaseResponse(updateSequenceNumber = 8)
+
+    "return the new update sequence number when euvat-stubs returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-purchase"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deletePurchase(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-purchase"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deletePurchase(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "EuVatStubsConnector.getSupplierVrnCount" should {
     val sampleRequest = SupplierVrnCountRequest(
       applicationId = 133,
@@ -536,6 +560,21 @@ class EuVatStubsConnectorSpec
 
       connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
+  "EuVatStubsConnector.getSadReferenceCount" should {
+    val sampleRequest = SadReferenceCountRequest(
+      applicationId      = 133,
+      itemNumber         = 4,
+      sadReferenceNumber = "500000881"
+    )
+    val sampleResponse = SadReferenceCountResponse(duplicateCount = 1)
+
+    "return the SAD reference count when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/get-sad-reference-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+      connector.getSadReferenceCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
 
     "return error when euvat-stubs returns 500" in {
       stubFor(
@@ -544,6 +583,10 @@ class EuVatStubsConnectorSpec
       )
 
       connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+        post(urlEqualTo("/euvat-stubs/get-sad-reference-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+      connector.getSadReferenceCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }

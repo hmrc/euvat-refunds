@@ -268,6 +268,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       contentAsString(result) should include("Failed to add import")
     }
   }
+
   "EuVatCandeController.getPurchaseDetails" should {
 
     val detailsRequest = GetPurchaseDetailsRequest(applicationId = 123456, itemNumber = 4)
@@ -731,4 +732,98 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.deletePurchase" should {
+
+    val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeletePurchaseResponse(updateSequenceNumber = 8)
+
+    "return 200 with JSON when service returns the new update sequence number" in {
+      when(service.deletePurchase(any())(any()))
+        .thenReturn(Future.successful(deleteResponse))
+
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase")
+          .withJsonBody(Json.toJson(deleteRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(deleteResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase")
+          .withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 when the proxy call fails with an UpstreamErrorResponse" in {
+      when(service.deletePurchase(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("bang", 502)))
+
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase").withJsonBody(Json.toJson(deleteRequest))
+      )
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to delete purchase"
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.deletePurchase(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.deletePurchase()(
+        FakeRequest(DELETE, "/delete-purchase").withJsonBody(Json.toJson(deleteRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to delete purchase")
+    }
+  }
+
+  "EuVatCandeController.getSadReferenceCount" should {
+    val sadReferenceCountRequest = SadReferenceCountRequest(
+      applicationId      = 133,
+      itemNumber         = 4,
+      sadReferenceNumber = "500000881"
+    )
+    val sadReferenceCountResponse = SadReferenceCountResponse(duplicateCount = 1)
+
+    "return 200 with JSON when service returns the count" in {
+      when(service.getSadReferenceCount(any())(any()))
+        .thenReturn(Future.successful(sadReferenceCountResponse))
+
+      val result = controller.getSadReferenceCount()(
+        FakeRequest(POST, "/get-sad-reference-count").withJsonBody(Json.toJson(sadReferenceCountRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(sadReferenceCountResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getSadReferenceCount()(
+        FakeRequest(POST, "/get-sad-reference-count").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 500 and log error when the service fails" in {
+      when(service.getSadReferenceCount(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getSadReferenceCount()(
+        FakeRequest(POST, "/get-sad-reference-count").withJsonBody(Json.toJson(sadReferenceCountRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to retrieve SAD reference count")
+    }
+  }
 }
