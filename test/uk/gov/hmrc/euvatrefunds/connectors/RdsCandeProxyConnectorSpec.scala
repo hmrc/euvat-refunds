@@ -458,6 +458,31 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.getSadReferenceCount" should {
+    val sampleRequest = SadReferenceCountRequest(
+      applicationId      = 133,
+      itemNumber         = 4,
+      sadReferenceNumber = "500000881"
+    )
+    val sampleResponse = SadReferenceCountResponse(duplicateCount = 1)
+
+    "return the SAD reference count when rds-cande-proxy returns 200" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-sad-reference-count"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
+      )
+      connector.getSadReferenceCount(sampleRequest).futureValue shouldBe sampleResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        post(urlEqualTo("/rds-cande-proxy/euvat/get-sad-reference-count"))
+          .willReturn(aResponse().withStatus(500))
+      )
+      connector.getSadReferenceCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "RdsCandeProxyConnector.updateImportDetails" should {
     val updateResponse = UpdateImportResponse(updateSequenceNumber = 2)
 
@@ -467,7 +492,7 @@ class RdsCandeProxyConnectorSpec
       goodsDescriptionCategory    = "10",
       goodsDescriptionSubCategory = Some("10.4.1"),
       goodsDescriptionText        = Some("office stationery and consumables"),
-      hasSadReferenceNumber       = Some("Y"),
+      hasSadReferenceNumber       = Some(true),
       sadReferenceNumber          = Some("SAD123456789"),
       referenceInformation        = Some("Import declaration reference"),
       supplierName                = Some("Finnish International"),
@@ -514,21 +539,6 @@ class RdsCandeProxyConnectorSpec
 
       connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
-  "RdsCandeProxyConnector.getSadReferenceCount" should {
-    val sampleRequest = SadReferenceCountRequest(
-      applicationId      = 133,
-      itemNumber         = 4,
-      sadReferenceNumber = "500000881"
-    )
-    val sampleResponse = SadReferenceCountResponse(duplicateCount = 1)
-
-    "return the SAD reference count when rds-cande-proxy returns 200" in {
-      stubFor(
-        post(urlEqualTo("/rds-cande-proxy/euvat/get-sad-reference-count"))
-          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(sampleResponse).toString))
-      )
-      connector.getSadReferenceCount(sampleRequest).futureValue shouldBe sampleResponse
-    }
 
     "return error when rds-cande-proxy returns 500" in {
       stubFor(
@@ -537,10 +547,6 @@ class RdsCandeProxyConnectorSpec
       )
 
       connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
-        post(urlEqualTo("/rds-cande-proxy/euvat/get-sad-reference-count"))
-          .willReturn(aResponse().withStatus(500))
-      )
-      connector.getSadReferenceCount(sampleRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 }

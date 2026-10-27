@@ -653,85 +653,6 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
-  "EuVatCandeController.updateImportDetails" should {
-    val updateRequest = UpdateImportRequest(
-      applicationId               = 404,
-      itemNumber                  = 4,
-      goodsDescriptionCategory    = "10",
-      goodsDescriptionSubCategory = Some("10.4.1"),
-      goodsDescriptionText        = Some("office stationery and consumables"),
-      hasSadReferenceNumber       = Some("Y"),
-      sadReferenceNumber          = Some("SAD123456789"),
-      referenceInformation        = Some("Import declaration reference"),
-      supplierName                = Some("Finnish International"),
-      supplierAddressLine1        = Some("356 High Street"),
-      supplierAddressLine2        = Some("Rochdale"),
-      supplierAddressLine3        = Some("England"),
-      supplierCountryCode         = Some("GB"),
-      issuingDate                 = Some(LocalDateTime.of(2026, 5, 14, 0, 0)),
-      currencyCode                = Some("EUR"),
-      taxableAmount               = Some(BigDecimal(1000)),
-      vatAmount                   = Some(BigDecimal(99)),
-      deductibleVatAmount         = Some(BigDecimal(40)),
-      updateSequenceNumber        = 1
-    )
-
-    val updateResponse = UpdateImportResponse(updateSequenceNumber = 2)
-
-    "return 200 with JSON when service returns update response" in {
-      when(service.updateImportDetails(any())(any()))
-        .thenReturn(Future.successful(updateResponse))
-
-      val result = controller.updateImportDetails()(
-        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.toJson(updateRequest))
-      )
-
-      status(result)        shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(updateResponse)
-    }
-
-    "return 400 when request body is invalid" in {
-      val result = controller.updateImportDetails()(
-        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.obj("invalid" -> "body"))
-      )
-
-      status(result)          shouldBe BAD_REQUEST
-      contentAsString(result) shouldBe "Invalid request body"
-    }
-
-    "return 400 when request body is missing" in {
-      val result = controller.updateImportDetails()(
-        FakeRequest(PUT, "/update-importation-details")
-      )
-
-      status(result) shouldBe BAD_REQUEST
-    }
-
-    "return 500 when the upstream service returns an error" in {
-      when(service.updateImportDetails(any())(any()))
-        .thenReturn(Future.failed(UpstreamErrorResponse("bad request", BAD_REQUEST)))
-
-      val result = controller.updateImportDetails()(
-        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.toJson(updateRequest))
-      )
-
-      status(result)        shouldBe INTERNAL_SERVER_ERROR
-      contentAsString(result) should include("Failed to update import details")
-    }
-
-    "return 500 and log error when DB call fails" in {
-      when(service.updateImportDetails(any())(any()))
-        .thenReturn(Future.failed(new RuntimeException("DB error")))
-
-      val result = controller.updateImportDetails()(
-        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.toJson(updateRequest))
-      )
-
-      status(result)        shouldBe INTERNAL_SERVER_ERROR
-      contentAsString(result) should include("Failed to update import details")
-    }
-  }
-
   "EuVatCandeController.deletePurchase" should {
 
     val deleteRequest = DeletePurchaseRequest(applicationId = 123456, itemNumber = 4, updateSequenceNumber = 7)
@@ -824,6 +745,85 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to retrieve SAD reference count")
+    }
+  }
+
+  "EuVatCandeController.updateImportDetails" should {
+    val updateRequest = UpdateImportRequest(
+      applicationId               = 404,
+      itemNumber                  = 4,
+      goodsDescriptionCategory    = "10",
+      goodsDescriptionSubCategory = Some("10.4.1"),
+      goodsDescriptionText        = Some("office stationery and consumables"),
+      hasSadReferenceNumber       = Some(true),
+      sadReferenceNumber          = Some("SAD123456789"),
+      referenceInformation        = Some("Import declaration reference"),
+      supplierName                = Some("Finnish International"),
+      supplierAddressLine1        = Some("356 High Street"),
+      supplierAddressLine2        = Some("Rochdale"),
+      supplierAddressLine3        = Some("England"),
+      supplierCountryCode         = Some("GB"),
+      issuingDate                 = Some(LocalDateTime.of(2026, 5, 14, 0, 0)),
+      currencyCode                = Some("EUR"),
+      taxableAmount               = Some(BigDecimal(1000)),
+      vatAmount                   = Some(BigDecimal(99)),
+      deductibleVatAmount         = Some(BigDecimal(40)),
+      updateSequenceNumber        = 1
+    )
+
+    val updateResponse = UpdateImportResponse(updateSequenceNumber = 2)
+
+    "return 200 with JSON when service returns update response" in {
+      when(service.updateImportDetails(any())(any()))
+        .thenReturn(Future.successful(updateResponse))
+
+      val result = controller.updateImportDetails()(
+        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(updateResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.updateImportDetails()(
+        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 400 when request body is missing" in {
+      val result = controller.updateImportDetails()(
+        FakeRequest(PUT, "/update-importation-details")
+      )
+
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 when the upstream service returns an error" in {
+      when(service.updateImportDetails(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("bad request", BAD_REQUEST)))
+
+      val result = controller.updateImportDetails()(
+        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to update import details")
+    }
+
+    "return 500 and log error when DB call fails" in {
+      when(service.updateImportDetails(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.updateImportDetails()(
+        FakeRequest(PUT, "/update-importation-details").withJsonBody(Json.toJson(updateRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to update import details")
     }
   }
 }

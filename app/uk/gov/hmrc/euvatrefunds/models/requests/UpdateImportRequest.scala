@@ -26,7 +26,7 @@ case class UpdateImportRequest(
   goodsDescriptionCategory: String,
   goodsDescriptionSubCategory: Option[String],
   goodsDescriptionText: Option[String],
-  hasSadReferenceNumber: Option[String],
+  hasSadReferenceNumber: Option[Boolean],
   sadReferenceNumber: Option[String],
   referenceInformation: Option[String],
   supplierName: Option[String],
