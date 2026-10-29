@@ -177,9 +177,9 @@ class EuVatCandeController @Inject() (
 
   def updateImportDetails: Action[AnyContent] =
     authorise.async { implicit request =>
-      request.body.asJson.flatMap(_.asOpt[UpdateImportRequest]) match {
+      request.body.asJson.flatMap(_.asOpt[UpdateImportDetailsRequest]) match {
         case None =>
-          logger.warn("Invalid JSON for UpdateImportRequest")
+          logger.warn("Invalid JSON for UpdateImportDetailsRequest")
           Future.successful(BadRequest("Invalid request body"))
         case Some(updateRequest) =>
           service

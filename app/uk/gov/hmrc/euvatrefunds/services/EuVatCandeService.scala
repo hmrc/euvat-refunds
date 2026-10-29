@@ -84,7 +84,7 @@ class EuVatCandeService @Inject() (
     }
   }
 
-  def updateImportDetails(updateRequest: UpdateImportRequest)(implicit hc: HeaderCarrier): Future[UpdateImportResponse] = {
+  def updateImportDetails(updateRequest: UpdateImportDetailsRequest)(implicit hc: HeaderCarrier): Future[UpdateImportDetailsResponse] = {
     if (candeStubbed) {
       euVatStubsConnector.updateImportDetails(updateRequest)
     } else {

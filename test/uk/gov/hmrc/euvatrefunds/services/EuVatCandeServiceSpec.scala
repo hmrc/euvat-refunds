@@ -1034,13 +1034,13 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
   }
 
   "EuVatCandeService.updateImportDetails" should {
-    val request = UpdateImportRequest(
+    val request = UpdateImportDetailsRequest(
       applicationId               = 404,
       itemNumber                  = 4,
       goodsDescriptionCategory    = "10",
       goodsDescriptionSubCategory = Some("10.4.1"),
       goodsDescriptionText        = Some("office stationery and consumables"),
-      hasSadReferenceNumber       = Some(true),
+      hasSadReferenceNumber       = Some("true"),
       sadReferenceNumber          = Some("SAD123456789"),
       referenceInformation        = Some("Import declaration reference"),
       supplierName                = Some("Finnish International"),
@@ -1056,7 +1056,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       updateSequenceNumber        = 1
     )
 
-    val expectedResponse = UpdateImportResponse(updateSequenceNumber = 2)
+    val expectedResponse = UpdateImportDetailsResponse(updateSequenceNumber = 2)
 
     "return the response from the rds cande connector" in {
       lazy val configuration: Configuration =

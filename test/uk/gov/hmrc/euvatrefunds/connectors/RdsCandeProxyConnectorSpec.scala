@@ -484,15 +484,15 @@ class RdsCandeProxyConnectorSpec
   }
 
   "RdsCandeProxyConnector.updateImportDetails" should {
-    val updateResponse = UpdateImportResponse(updateSequenceNumber = 2)
+    val updateResponse = UpdateImportDetailsResponse(updateSequenceNumber = 2)
 
-    val updateRequest = UpdateImportRequest(
+    val updateRequest = UpdateImportDetailsRequest(
       applicationId               = 404,
       itemNumber                  = 4,
       goodsDescriptionCategory    = "10",
       goodsDescriptionSubCategory = Some("10.4.1"),
       goodsDescriptionText        = Some("office stationery and consumables"),
-      hasSadReferenceNumber       = Some(true),
+      hasSadReferenceNumber       = Some("true"),
       sadReferenceNumber          = Some("SAD123456789"),
       referenceInformation        = Some("Import declaration reference"),
       supplierName                = Some("Finnish International"),

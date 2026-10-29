@@ -18,8 +18,8 @@ package uk.gov.hmrc.euvatrefunds.models.responses
 
 import play.api.libs.json.{Json, OFormat}
 
-case class UpdateImportResponse(updateSequenceNumber: Int)
+case class UpdateImportDetailsResponse(updateSequenceNumber: Int)
 
-object UpdateImportResponse {
-  implicit val format: OFormat[UpdateImportResponse] = Json.format[UpdateImportResponse]
+object UpdateImportDetailsResponse {
+  implicit val format: OFormat[UpdateImportDetailsResponse] = Json.format[UpdateImportDetailsResponse]
 }

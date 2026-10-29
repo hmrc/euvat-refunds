@@ -749,13 +749,13 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
   }
 
   "EuVatCandeController.updateImportDetails" should {
-    val updateRequest = UpdateImportRequest(
+    val updateRequest = UpdateImportDetailsRequest(
       applicationId               = 404,
       itemNumber                  = 4,
       goodsDescriptionCategory    = "10",
       goodsDescriptionSubCategory = Some("10.4.1"),
       goodsDescriptionText        = Some("office stationery and consumables"),
-      hasSadReferenceNumber       = Some(true),
+      hasSadReferenceNumber       = Some("true"),
       sadReferenceNumber          = Some("SAD123456789"),
       referenceInformation        = Some("Import declaration reference"),
       supplierName                = Some("Finnish International"),
@@ -771,7 +771,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       updateSequenceNumber        = 1
     )
 
-    val updateResponse = UpdateImportResponse(updateSequenceNumber = 2)
+    val updateResponse = UpdateImportDetailsResponse(updateSequenceNumber = 2)
 
     "return 200 with JSON when service returns update response" in {
       when(service.updateImportDetails(any())(any()))
