@@ -337,3 +337,16 @@ class EuVatCandeController @Inject() (
             }
       }
     }
+
+  def getApplicationDetails(applicationId: Long): Action[AnyContent] =
+    authorise.async { implicit request =>
+      service
+        .getApplicationDetails(applicationId)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving application details", ex)
+          InternalServerError("Failed to retrieve application details")
+        }
+    }

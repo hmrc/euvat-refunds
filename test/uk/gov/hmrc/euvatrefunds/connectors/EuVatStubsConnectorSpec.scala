@@ -649,4 +649,28 @@ class EuVatStubsConnectorSpec
       connector.getReferenceInformationCount(request).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "EuVatStubsConnector.getApplicationDetails" should {
+    val response = Json
+      .parse("""{"applicationDetails":[{"applicationId":133,"updateSeqNumber":1}]}""")
+      .as[ApplicationDetailsResponse]
+
+    "return the application details when euvat-stubs returns 200" in {
+      stubFor(
+        get(urlEqualTo("/euvat-stubs/getApplicationDetails/133"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
+      )
+
+      connector.getApplicationDetails(133L).futureValue shouldBe response
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        get(urlEqualTo("/euvat-stubs/getApplicationDetails/133"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getApplicationDetails(133L).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }
