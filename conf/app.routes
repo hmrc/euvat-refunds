@@ -15,3 +15,4 @@ GET       /get-import-details/:applicationId/:itemNumber    uk.gov.hmrc.euvatref
 POST      /add-import                                       uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addImport
 DELETE    /delete-purchase                                  uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deletePurchase
 POST      /get-sad-reference-count                          uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSadReferenceCount
+DELETE    /delete-import                                    uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteImport
