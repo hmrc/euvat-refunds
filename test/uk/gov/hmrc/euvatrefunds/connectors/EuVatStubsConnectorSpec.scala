@@ -584,6 +584,18 @@ class EuVatStubsConnectorSpec
       )
 
       connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        put(urlEqualTo("/euvat-stubs/update-importation-details"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "EuVatStubsConnector.deleteImport" should {
     val deleteRequest = DeleteImportRequest(
       applicationId        = 123456L,
@@ -604,11 +616,6 @@ class EuVatStubsConnectorSpec
 
     "return error when euvat-stubs returns 500" in {
       stubFor(
-        put(urlEqualTo("/euvat-stubs/update-importation-details"))
-          .willReturn(aResponse().withStatus(500))
-      )
-
-      connector.updateImportDetails(updateRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
         delete(urlEqualTo("/euvat-stubs/delete-import"))
           .willReturn(aResponse().withStatus(500))
       )
