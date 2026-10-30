@@ -13,6 +13,7 @@ DELETE    /delete-application                                uk.gov.hmrc.euvatre
 PUT       /update-application-details                        uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.updateApplicationDetails
 GET       /get-import-details/:applicationId/:itemNumber     uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getImportDetails(applicationId: Long, itemNumber: Int)
 POST      /add-import                                        uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addImport
+PUT       /update-importation-details                       uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.updateImportDetails
 DELETE    /delete-purchase                                  uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deletePurchase
 POST      /get-sad-reference-count                          uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSadReferenceCount
 DELETE    /delete-import                                    uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteImport
