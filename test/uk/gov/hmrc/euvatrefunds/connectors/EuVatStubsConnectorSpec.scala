@@ -623,4 +623,30 @@ class EuVatStubsConnectorSpec
       connector.deleteImport(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "EuVatStubsConnector.getReferenceInformationCount" should {
+    val url = "/euvat-stubs/get-reference-information-count"
+    val request = ReferenceInfoCountRequest(applicationId = 123, itemNumber = 2)
+
+    "return the reference information count when the euvat-stub returns 200" in {
+      val proxyResponse = ReferenceInfoCountResponse(1)
+
+      stubFor(
+        post(urlEqualTo(url))
+          .withRequestBody(equalToJson(Json.prettyPrint(Json.toJson(request))))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(proxyResponse).toString))
+      )
+
+      connector.getReferenceInformationCount(request).futureValue shouldBe proxyResponse
+    }
+
+    "return error when the euvat-stub returns 500" in {
+      stubFor(
+        post(urlEqualTo(url))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getReferenceInformationCount(request).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
 }
