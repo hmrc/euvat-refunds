@@ -318,3 +318,22 @@ class EuVatCandeController @Inject() (
             }
       }
     }
+
+  def getReferenceInformationCount: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[ReferenceInfoCountRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for ReferenceInfoCountRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(request) =>
+          service
+            .getReferenceInformationCount(request)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while getting reference information count", ex)
+              InternalServerError("Failed to get reference information count")
+            }
+      }
+    }
