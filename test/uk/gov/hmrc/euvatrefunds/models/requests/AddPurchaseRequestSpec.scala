@@ -29,7 +29,7 @@ class AddPurchaseRequestSpec extends AnyWordSpec with Matchers {
     goodsDescriptionCategory   = "1234",
     goodsDescriptionText       = Some("Fuel"),
     purchaseSubcategory        = Some("5678"),
-    simplifiedInvoiceIndicator = Some("N"),
+    simplifiedInvoiceIndicator = Some("false"),
     supplierName               = Some("ABC GmbH"),
     supplierAddress1           = Some("Line 1"),
     supplierAddress2           = Some("Line 2"),
