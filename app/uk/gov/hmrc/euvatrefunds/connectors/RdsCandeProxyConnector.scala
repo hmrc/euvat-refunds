@@ -142,3 +142,8 @@ class RdsCandeProxyConnector @Inject() (
       .post(url"$baseUrl/euvat/get-reference-information-count")
       .withBody(Json.toJson(request))
       .execute[ReferenceInfoCountResponse]
+
+  def getApplicationDetails(applicationId: Long)(implicit hc: HeaderCarrier): Future[ApplicationDetailsResponse] =
+    http
+      .get(url"$baseUrl/euvat/get-application-details/$applicationId")
+      .execute[ApplicationDetailsResponse]
