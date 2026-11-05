@@ -611,7 +611,7 @@ class RdsCandeProxyConnectorSpec
 
     "return the application details when rds-cande-proxy returns 200" in {
       stubFor(
-        get(urlEqualTo("/rds-cande-proxy/euvat/getApplicationDetails/133"))
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-application-details/133"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
       )
 
@@ -620,7 +620,7 @@ class RdsCandeProxyConnectorSpec
 
     "return error when rds-cande-proxy returns 500" in {
       stubFor(
-        get(urlEqualTo("/rds-cande-proxy/euvat/getApplicationDetails/133"))
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-application-details/133"))
           .willReturn(aResponse().withStatus(500))
       )
 

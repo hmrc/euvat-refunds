@@ -895,16 +895,16 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     "return 200 with JSON when service returns the application details" in {
       when(service.getApplicationDetails(any[Long]())(any())).thenReturn(Future.successful(response))
 
-      val result = controller.getApplicationDetails(133L)(FakeRequest(GET, "/getApplicationDetails/133"))
+      val result = controller.getApplicationDetails(133L)(FakeRequest(GET, "/get-application-details/133"))
 
       status(result)        shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(response)
     }
-	
+
     "return 500 when service fails" in {
       when(service.getApplicationDetails(any[Long]())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
 
-      val result = controller.getApplicationDetails(133L)(FakeRequest(GET, "/getApplicationDetails/133"))
+      val result = controller.getApplicationDetails(133L)(FakeRequest(GET, "/get-application-details/133"))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }

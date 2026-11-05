@@ -657,7 +657,7 @@ class EuVatStubsConnectorSpec
 
     "return the application details when euvat-stubs returns 200" in {
       stubFor(
-        get(urlEqualTo("/euvat-stubs/getApplicationDetails/133"))
+        get(urlEqualTo("/euvat-stubs/get-application-details/133"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
       )
 
@@ -666,7 +666,7 @@ class EuVatStubsConnectorSpec
 
     "return error when euvat-stubs returns 500" in {
       stubFor(
-        get(urlEqualTo("/euvat-stubs/getApplicationDetails/133"))
+        get(urlEqualTo("/euvat-stubs/get-application-details/133"))
           .willReturn(aResponse().withStatus(500))
       )
 

@@ -150,5 +150,5 @@ class EuVatStubsConnector @Inject() (
 
   def getApplicationDetails(applicationId: Long)(implicit hc: HeaderCarrier): Future[ApplicationDetailsResponse] =
     http
-      .get(url"$baseUrl/getApplicationDetails/$applicationId")
+      .get(url"$baseUrl/get-application-details/$applicationId")
       .execute[ApplicationDetailsResponse]
