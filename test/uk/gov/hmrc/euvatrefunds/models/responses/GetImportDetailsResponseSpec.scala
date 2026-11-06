@@ -38,7 +38,7 @@ class GetImportDetailsResponseSpec extends AnyWordSpec with Matchers {
     taxableAmount               = Some(BigDecimal("100.50")),
     vatAmount                   = Some(BigDecimal("21.10")),
     deductibleVatAmount         = Some(BigDecimal("21.10")),
-    hasSadReferenceNumber       = Some("N"),
+    hasSadReferenceNumber       = Some("false"),
     sadReferenceNumber          = Some("SAD-123"),
     referenceInformation        = Some("Ref Info"),
     goodsDescriptionText        = Some("Fuel"),
