@@ -176,4 +176,11 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def getApplicationDetails(applicationId: Long)(implicit hc: HeaderCarrier): Future[ApplicationDetailsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getApplicationDetails(applicationId)
+    } else {
+      rdsCandeProxyConnector.getApplicationDetails(applicationId)
+    }
+  }
 }

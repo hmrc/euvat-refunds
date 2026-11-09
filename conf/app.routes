@@ -18,3 +18,4 @@ DELETE    /delete-purchase                                  uk.gov.hmrc.euvatref
 POST      /get-sad-reference-count                          uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSadReferenceCount
 DELETE    /delete-import                                    uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteImport
 POST      /get-reference-information-count                  uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getReferenceInformationCount
+GET       /get-application-details/:applicationId           uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getApplicationDetails(applicationId: Long)

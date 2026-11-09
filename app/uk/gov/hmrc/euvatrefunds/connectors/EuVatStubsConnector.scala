@@ -147,3 +147,8 @@ class EuVatStubsConnector @Inject() (
       .post(url"$baseUrl/get-reference-information-count")
       .withBody(Json.toJson(request))
       .execute[ReferenceInfoCountResponse]
+
+  def getApplicationDetails(applicationId: Long)(implicit hc: HeaderCarrier): Future[ApplicationDetailsResponse] =
+    http
+      .get(url"$baseUrl/get-application-details/$applicationId")
+      .execute[ApplicationDetailsResponse]
