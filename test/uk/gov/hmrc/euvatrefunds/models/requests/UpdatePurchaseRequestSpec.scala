@@ -30,7 +30,7 @@ class UpdatePurchaseRequestSpec extends AnyWordSpec with Matchers {
     goodsDescriptionCategory    = "1234",
     goodsDescriptionSubCategory = Some("5678"),
     goodsDescriptionText        = Some("Fuel"),
-    simplifiedInvoiceIndicator  = Some("N"),
+    simplifiedInvoiceIndicator  = Some("false"),
     supplierName                = Some("ABC GmbH"),
     supplierAddress1            = Some("Line 1"),
     supplierAddress2            = Some("Line 2"),
