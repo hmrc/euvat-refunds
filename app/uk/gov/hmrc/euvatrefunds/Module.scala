@@ -20,8 +20,11 @@ import com.google.inject.AbstractModule
 import uk.gov.hmrc.euvatrefunds.actions.{AuthAction, DefaultAuthAction}
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
 
+import java.time.Clock
+
 class Module extends AbstractModule:
 
   override def configure(): Unit =
     bind(classOf[AuthAction]).to(classOf[DefaultAuthAction]).asEagerSingleton()
     bind(classOf[AppConfig]).asEagerSingleton()
+    bind(classOf[Clock]).toInstance(Clock.systemUTC())
