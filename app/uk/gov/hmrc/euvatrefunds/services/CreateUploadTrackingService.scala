@@ -67,7 +67,7 @@ class CreateUploadTrackingService @Inject() (
       response <- if stored then Future.successful(CreateUploadTrackingResponse.from(status)) else uploadStoredByAnotherRequest(applicationId, status)
     yield response
 
-  // another request replaced the record first, so return whichever upload is now stored
+  // another request replaced the record first, so return whichever upload is now stored, same functionality added as in NOVA
   private def uploadStoredByAnotherRequest(applicationId: Long, ours: ValidationStatus.AwaitingUpload): Future[CreateUploadTrackingResponse] =
     repository.get(applicationId).map {
       case Some(stored: ValidationStatus.AwaitingUpload) => CreateUploadTrackingResponse.from(stored)

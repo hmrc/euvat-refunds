@@ -46,8 +46,6 @@ class ValidationStatusRepository @Inject() (
   def get(applicationId: Long): Future[Option[ValidationStatus]] =
     collection.find(byApplicationId(applicationId)).headOption()
 
-  // only writes while the application still holds the upload it was based on,
-  // so two requests starting an upload at the same time end up with one record
   def replaceUpload(status: ValidationStatus, replacing: Option[String]): Future[Boolean] =
     replacing match
       case Some(reference) =>

@@ -34,10 +34,10 @@ class AppConfig @Inject() (config: Configuration):
     s"$protocol://$host:$port"
   }
 
-  val upscanCallbackBaseUrl: String = config.get[String]("upscan.callbackBaseUrl")
-  val upscanSuccessRedirect: String = config.get[String]("upscan.successRedirect")
-  val upscanErrorRedirect: String = config.get[String]("upscan.errorRedirect")
-  val upscanMinimumFileSize: Long = config.get[Long]("upscan.minimumFileSize")
-  val upscanMaximumFileSize: Long = config.get[Long]("upscan.maximumFileSize")
-  val validationStatusTtl: FiniteDuration = config.get[FiniteDuration]("mongodb.validationStatus.ttl")
-  val replaceIndexes: Boolean = config.get[Boolean]("mongodb.replaceIndexes")
+  lazy val upscanCallbackBaseUrl: String = config.get[String]("upscan.callbackBaseUrl")
+  lazy val upscanSuccessRedirect: String = config.get[String]("upscan.successRedirect")
+  lazy val upscanErrorRedirect: String = config.get[String]("upscan.errorRedirect")
+  lazy val upscanMinimumFileSize: Long = config.get[Long]("upscan.minimumFileSize")
+  lazy val upscanMaximumFileSize: Long = config.get[Long]("upscan.maximumFileSize")
+  lazy val validationStatusTtl: FiniteDuration = config.get[FiniteDuration]("mongodb.validationStatus.ttl")
+  lazy val replaceIndexes: Boolean = config.get[Boolean]("mongodb.replaceIndexes")
