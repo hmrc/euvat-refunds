@@ -19,6 +19,7 @@ package uk.gov.hmrc.euvatrefunds.config
 import play.api.Configuration
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.FiniteDuration
 
 @Singleton
 class AppConfig @Inject() (config: Configuration):
@@ -32,3 +33,11 @@ class AppConfig @Inject() (config: Configuration):
 
     s"$protocol://$host:$port"
   }
+
+  lazy val upscanCallbackBaseUrl: String = config.get[String]("upscan.callbackBaseUrl")
+  lazy val upscanSuccessRedirect: String = config.get[String]("upscan.successRedirect")
+  lazy val upscanErrorRedirect: String = config.get[String]("upscan.errorRedirect")
+  lazy val upscanMinimumFileSize: Long = config.get[Long]("upscan.minimumFileSize")
+  lazy val upscanMaximumFileSize: Long = config.get[Long]("upscan.maximumFileSize")
+  lazy val validationStatusTtl: FiniteDuration = config.get[FiniteDuration]("mongodb.validationStatus.ttl")
+  lazy val replaceIndexes: Boolean = config.get[Boolean]("mongodb.replaceIndexes")
