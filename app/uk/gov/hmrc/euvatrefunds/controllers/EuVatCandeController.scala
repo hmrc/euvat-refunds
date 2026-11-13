@@ -350,3 +350,19 @@ class EuVatCandeController @Inject() (
           InternalServerError("Failed to retrieve application details")
         }
     }
+
+  def getAttachmentDetails(applicationId: Long, attachmentNumber: Int): Action[AnyContent] =
+
+    val detailsRequest = GetAttachmentDetailsRequest(applicationId = applicationId, attachmentNumber = attachmentNumber)
+
+    authorise.async { implicit request =>
+      service
+        .getAttachmentDetails(detailsRequest)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving attachment details", ex)
+          InternalServerError("Failed to retrieve attachment details")
+        }
+    }

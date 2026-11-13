@@ -183,4 +183,13 @@ class EuVatCandeService @Inject() (
       rdsCandeProxyConnector.getApplicationDetails(applicationId)
     }
   }
+
+  def getAttachmentDetails(request: GetAttachmentDetailsRequest)(implicit hc: HeaderCarrier): Future[GetAttachmentDetailsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getAttachmentDetails(request)
+    } else {
+      rdsCandeProxyConnector.getAttachmentDetails(request)
+    }
+  }
+
 }
