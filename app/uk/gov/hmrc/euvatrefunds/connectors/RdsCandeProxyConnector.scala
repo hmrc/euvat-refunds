@@ -147,3 +147,8 @@ class RdsCandeProxyConnector @Inject() (
     http
       .get(url"$baseUrl/euvat/get-application-details/$applicationId")
       .execute[ApplicationDetailsResponse]
+
+  def getAttachmentDetails(request: GetAttachmentDetailsRequest)(implicit hc: HeaderCarrier): Future[GetAttachmentDetailsResponse] =
+    http
+      .get(url"$baseUrl/euvat/get-attachment-details/${request.applicationId}/${request.attachmentNumber}")
+      .execute[GetAttachmentDetailsResponse]
