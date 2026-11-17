@@ -909,4 +909,34 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
+
+  "EuVatCandeController.getAttachmentDetails" should {
+    val response = GetAttachmentDetailsResponse(
+      attachmentNumber     = 11,
+      fileName             = Some("test.pdf"),
+      fileType             = Some("pdf"),
+      fileDescription      = Some("pdf file attached"),
+      fileSize             = Some(42),
+      updateSequenceNumber = 10
+    )
+
+    "return 200 with JSON when service returns the attachment details" in {
+
+      when(service.getAttachmentDetails(any())(any())).thenReturn(Future.successful(response))
+
+      val result = controller.getAttachmentDetails(123456L, 4)(FakeRequest(GET, s"/get-attachment-details/123456/4"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return 500 when service fails" in {
+      when(service.getAttachmentDetails(any())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getAttachmentDetails(123456L, 4)(FakeRequest(GET, s"/get-attachment-details/123456/4"))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
 }

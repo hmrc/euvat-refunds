@@ -627,4 +627,39 @@ class RdsCandeProxyConnectorSpec
       connector.getApplicationDetails(133L).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
+
+  "RdsCandeProxyConnector.getAttachmentDetails" should {
+    val request = GetAttachmentDetailsRequest(
+      applicationId    = 123456,
+      attachmentNumber = 4
+    )
+
+    val detailsResponse = GetAttachmentDetailsResponse(
+      attachmentNumber     = 11,
+      fileName             = Some("test.pdf"),
+      fileType             = Some("pdf"),
+      fileDescription      = Some("pdf file attached"),
+      fileSize             = Some(42),
+      updateSequenceNumber = 10
+    )
+
+    "return the attachment details when rds-cande-proxy returns 200" in {
+      stubFor(
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-attachment-details/123456/4"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(detailsResponse).toString))
+      )
+
+      connector.getAttachmentDetails(request).futureValue shouldBe detailsResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-attachment-details/123456/4"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getAttachmentDetails(request).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }

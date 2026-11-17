@@ -152,3 +152,8 @@ class EuVatStubsConnector @Inject() (
     http
       .get(url"$baseUrl/get-application-details/$applicationId")
       .execute[ApplicationDetailsResponse]
+
+  def getAttachmentDetails(request: GetAttachmentDetailsRequest)(implicit hc: HeaderCarrier): Future[GetAttachmentDetailsResponse] =
+    http
+      .get(url"$baseUrl/get-attachment-details/${request.applicationId}/${request.attachmentNumber}")
+      .execute[GetAttachmentDetailsResponse]
