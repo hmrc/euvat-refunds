@@ -1378,4 +1378,169 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
     }
   }
 
+  "EuVatCandeService.addAttachment" should {
+
+    val fileContent: Array[Byte] =
+      "receipt contents".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+
+    val request = AddAttachmentRequest(
+      applicationId        = 123456L,
+      fileName             = "receipt.pdf",
+      fileType             = "pdf",
+      fileDescription      = Some("Purchase receipt"),
+      fileSize             = fileContent.length.toLong,
+      fileContent          = fileContent,
+      updateSequenceNumber = 10
+    )
+
+    val expectedResponse = AddAttachmentResponse(
+      attachmentNumber     = 4,
+      updateSequenceNumber = 11
+    )
+
+    "return the response from the rds cande connector" in {
+      val configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            "feature-switch.rds-cande-stubbed = false"
+          )
+        )
+
+      val mockCandeConnector =
+        mock[RdsCandeProxyConnector]
+
+      val mockStubsConnector =
+        mock[EuVatStubsConnector]
+
+      val service =
+        new EuVatCandeService(
+          mockCandeConnector,
+          mockStubsConnector,
+          configuration
+        )
+
+      when(mockCandeConnector.addAttachment(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      val result =
+        service.addAttachment(request).futureValue
+
+      result shouldBe expectedResponse
+
+      verify(mockCandeConnector, times(1))
+        .addAttachment(any())(any())
+
+      verifyNoInteractions(mockStubsConnector)
+    }
+
+    "return the response from the euvat stubs connector" in {
+      val configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            "feature-switch.rds-cande-stubbed = true"
+          )
+        )
+
+      val mockCandeConnector =
+        mock[RdsCandeProxyConnector]
+
+      val mockStubsConnector =
+        mock[EuVatStubsConnector]
+
+      val service =
+        new EuVatCandeService(
+          mockCandeConnector,
+          mockStubsConnector,
+          configuration
+        )
+
+      when(mockStubsConnector.addAttachment(any())(any()))
+        .thenReturn(Future.successful(expectedResponse))
+
+      val result =
+        service.addAttachment(request).futureValue
+
+      result shouldBe expectedResponse
+
+      verify(mockStubsConnector, times(1))
+        .addAttachment(any())(any())
+
+      verifyNoInteractions(mockCandeConnector)
+    }
+
+    "propagate an exception from the rds cande connector" in {
+      val failure =
+        new RuntimeException("Connector failed")
+
+      val configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            "feature-switch.rds-cande-stubbed = false"
+          )
+        )
+
+      val mockCandeConnector =
+        mock[RdsCandeProxyConnector]
+
+      val mockStubsConnector =
+        mock[EuVatStubsConnector]
+
+      val service =
+        new EuVatCandeService(
+          mockCandeConnector,
+          mockStubsConnector,
+          configuration
+        )
+
+      when(mockCandeConnector.addAttachment(any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      val result =
+        service.addAttachment(request)
+
+      whenReady(result.failed) { ex =>
+        ex shouldBe failure
+      }
+
+      verifyNoInteractions(mockStubsConnector)
+    }
+
+    "propagate an exception from the euvat stubs connector" in {
+      val failure =
+        new RuntimeException("Stubs connector failed")
+
+      val configuration =
+        Configuration(
+          ConfigFactory.parseString(
+            "feature-switch.rds-cande-stubbed = true"
+          )
+        )
+
+      val mockCandeConnector =
+        mock[RdsCandeProxyConnector]
+
+      val mockStubsConnector =
+        mock[EuVatStubsConnector]
+
+      val service =
+        new EuVatCandeService(
+          mockCandeConnector,
+          mockStubsConnector,
+          configuration
+        )
+
+      when(mockStubsConnector.addAttachment(any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      val result =
+        service.addAttachment(request)
+
+      whenReady(result.failed) { ex =>
+        ex shouldBe failure
+      }
+
+      verifyNoInteractions(mockCandeConnector)
+    }
+  }
+
 }
