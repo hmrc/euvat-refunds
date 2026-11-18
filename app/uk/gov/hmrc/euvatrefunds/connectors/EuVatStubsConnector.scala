@@ -158,6 +158,11 @@ class EuVatStubsConnector @Inject() (
       .get(url"$baseUrl/get-attachment-details/${request.applicationId}/${request.attachmentNumber}")
       .execute[GetAttachmentDetailsResponse]
 
+  def getFullAttachmentDetails(request: GetFullAttachmentDetailsRequest)(implicit hc: HeaderCarrier): Future[GetFullAttachmentDetailsResponse] =
+    http
+      .get(url"$baseUrl/get-full-attachment-details/${request.applicationId}/${request.attachmentNumber}")
+      .execute[GetFullAttachmentDetailsResponse]
+
   def deleteAttachment(request: DeleteAttachmentRequest)(implicit hc: HeaderCarrier): Future[DeleteAttachmentResponse] =
     http
       .delete(url"$baseUrl/delete-attachment")
