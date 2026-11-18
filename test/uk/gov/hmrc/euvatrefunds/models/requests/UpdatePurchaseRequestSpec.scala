@@ -25,25 +25,25 @@ import java.time.LocalDateTime
 class UpdatePurchaseRequestSpec extends AnyWordSpec with Matchers {
 
   private val request = UpdatePurchaseRequest(
-    applicationId               = 123456,
-    itemNumber                  = 2,
-    goodsDescriptionCategory    = "1234",
-    goodsDescriptionSubCategory = Some("5678"),
-    goodsDescriptionText        = Some("Fuel"),
-    simplifiedInvoiceIndicator  = Some("false"),
-    supplierName                = Some("ABC GmbH"),
-    supplierAddress1            = Some("Line 1"),
-    supplierAddress2            = Some("Line 2"),
-    supplierAddress3            = Some("Line 3"),
-    supplierVatRegNumber        = Some("500000881"),
-    supplierTaxIdentifier       = Some("TAX123"),
-    invoiceDate                 = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
-    invoiceNumber               = Some("a444"),
-    currencyCode                = Some("EUR"),
-    taxableAmount               = Some(BigDecimal(100.00)),
-    vatAmount                   = Some(BigDecimal(20.00)),
-    deductibleVatAmount         = Some(BigDecimal(20.00)),
-    updateSequenceNumber        = 1
+    applicationId              = 123456,
+    itemNumber                 = 2,
+    goodsDescriptionCode       = "1234",
+    goodsDescriptionSubCode    = Some("5678"),
+    goodsDescriptionText       = Some("Fuel"),
+    simplifiedInvoiceIndicator = Some("false"),
+    supplierName               = Some("ABC GmbH"),
+    supplierAddress1           = Some("Line 1"),
+    supplierAddress2           = Some("Line 2"),
+    supplierAddress3           = Some("Line 3"),
+    supplierVatRegNumber       = Some("500000881"),
+    supplierTaxIdentifier      = Some("TAX123"),
+    invoiceDate                = Some(LocalDateTime.of(2025, 2, 1, 0, 0)),
+    invoiceNumber              = Some("a444"),
+    currencyCode               = Some("EUR"),
+    taxableAmount              = Some(BigDecimal(100.00)),
+    vatAmount                  = Some(BigDecimal(20.00)),
+    deductibleVatAmount        = Some(BigDecimal(20.00)),
+    updateSequenceNumber       = 1
   )
 
   "UpdatePurchaseRequest JSON format" should {
@@ -54,18 +54,18 @@ class UpdatePurchaseRequestSpec extends AnyWordSpec with Matchers {
 
     "deserialize when optional fields are absent" in {
       val json = Json.obj(
-        "applicationId"            -> 1,
-        "itemNumber"               -> 1,
-        "goodsDescriptionCategory" -> "1",
-        "updateSequenceNumber"     -> 1
+        "applicationId"        -> 1,
+        "itemNumber"           -> 1,
+        "goodsDescriptionCode" -> "1",
+        "updateSequenceNumber" -> 1
       )
 
       val parsed = json.as[UpdatePurchaseRequest]
 
-      parsed.applicationId            shouldBe 1
-      parsed.itemNumber               shouldBe 1
-      parsed.goodsDescriptionCategory shouldBe "1"
-      parsed.updateSequenceNumber     shouldBe 1
+      parsed.applicationId        shouldBe 1
+      parsed.itemNumber           shouldBe 1
+      parsed.goodsDescriptionCode shouldBe "1"
+      parsed.updateSequenceNumber shouldBe 1
     }
   }
 }
