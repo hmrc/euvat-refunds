@@ -366,3 +366,19 @@ class EuVatCandeController @Inject() (
           InternalServerError("Failed to retrieve attachment details")
         }
     }
+
+  def getFullAttachmentDetails(applicationId: Long, attachmentNumber: Int): Action[AnyContent] =
+
+    val fullDetailsRequest = GetFullAttachmentDetailsRequest(applicationId = applicationId, attachmentNumber = attachmentNumber)
+
+    authorise.async { implicit request =>
+      service
+        .getFullAttachmentDetails(fullDetailsRequest)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving full attachment details", ex)
+          InternalServerError("Failed to retrieve full attachment details")
+        }
+    }

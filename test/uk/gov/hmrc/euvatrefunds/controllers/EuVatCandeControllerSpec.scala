@@ -939,4 +939,44 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.getFullAttachmentDetails" should {
+    val response = GetFullAttachmentDetailsResponse(
+      attachmentNumber     = 11,
+      fileName             = Some("test.pdf"),
+      fileType             = Some("pdf"),
+      fileDescription      = Some("pdf file attached"),
+      fileSize             = Some(42),
+      fileContent          = Some("dGVzdCBmaWxlIGNvbnRlbnQ="),
+      updateSequenceNumber = 10
+    )
+
+    "return 200 with JSON when service returns the attachment details" in {
+
+      when(service.getFullAttachmentDetails(any())(any())).thenReturn(Future.successful(response))
+
+      val result = controller.getFullAttachmentDetails(123456L, 4)(FakeRequest(GET, s"/get-full-attachment-details/123456/4"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return 500 when service fails" in {
+      when(service.getFullAttachmentDetails(any())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getFullAttachmentDetails(123456L, 4)(FakeRequest(GET, s"/get-full-attachment-details/123456/4"))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return 500 when the proxy call fails with an UpstreamErrorResponse" in {
+      when(service.getFullAttachmentDetails(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("No attachment record", 500)))
+
+      val result = controller.getFullAttachmentDetails(123456L, 4)(FakeRequest(GET, "/get-full-attachment-details/123456/4"))
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to retrieve full attachment details"
+    }
+  }
+
 }
