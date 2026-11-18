@@ -662,6 +662,39 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.getFullAttachmentDetails" should {
+    val request = GetFullAttachmentDetailsRequest(
+      applicationId    = 123456L,
+      attachmentNumber = 4
+    )
+
+    val fullDetailsResponse = GetFullAttachmentDetailsResponse(
+      attachmentNumber     = 11,
+      fileName             = Some("test.pdf"),
+      fileType             = Some("pdf"),
+      fileDescription      = Some("pdf file attached"),
+      fileSize             = Some(42),
+      fileContent          = Some("dGVzdCBmaWxlIGNvbnRlbnQ="),
+      updateSequenceNumber = 10
+    )
+
+    "return the full attachment details when cande-proxy returns 200" in {
+      stubFor(
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-full-attachment-details/123456/4"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(fullDetailsResponse).toString))
+      )
+      connector.getFullAttachmentDetails(request).futureValue shouldBe fullDetailsResponse
+    }
+
+    "return error when cande-proxy returns 500" in {
+      stubFor(
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-full-attachment-details/123456/4"))
+          .willReturn(aResponse().withStatus(500))
+      )
+      connector.getFullAttachmentDetails(request).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
   "RdsCandeProxyConnector.deleteAttachment" should {
     val deleteRequest = DeleteAttachmentRequest(applicationId = 123456, attachmentNumber = 4, updateSequenceNumber = 7)
 
