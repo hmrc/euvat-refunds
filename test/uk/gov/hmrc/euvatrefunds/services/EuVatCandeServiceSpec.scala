@@ -1324,4 +1324,58 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
     }
   }
 
+  "EuVatCandeService.deleteAttachment" should {
+
+    val deleteRequest = DeleteAttachmentRequest(applicationId = 123456, attachmentNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeleteAttachmentResponse(updateSequenceNumber = 8)
+
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.deleteAttachment(any())(any()))
+        .thenReturn(Future.successful(deleteResponse))
+
+      service.deleteAttachment(deleteRequest).futureValue shouldBe deleteResponse
+      verify(mockCandeConnector, times(1)).deleteAttachment(any())(any())
+    }
+
+    "return the response from the euvat stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.deleteAttachment(any())(any()))
+        .thenReturn(Future.successful(deleteResponse))
+
+      service.deleteAttachment(deleteRequest).futureValue shouldBe deleteResponse
+      verify(mockStubsConnector, times(1)).deleteAttachment(any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.deleteAttachment(any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      whenReady(service.deleteAttachment(deleteRequest).failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
+
 }

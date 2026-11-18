@@ -192,4 +192,11 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def deleteAttachment(request: DeleteAttachmentRequest)(implicit hc: HeaderCarrier): Future[DeleteAttachmentResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.deleteAttachment(request)
+    } else {
+      rdsCandeProxyConnector.deleteAttachment(request)
+    }
+  }
 }

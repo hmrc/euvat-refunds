@@ -366,3 +366,22 @@ class EuVatCandeController @Inject() (
           InternalServerError("Failed to retrieve attachment details")
         }
     }
+
+  def deleteAttachment: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[DeleteAttachmentRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for DeleteAttachmentRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(deleteRequest) =>
+          service
+            .deleteAttachment(deleteRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error("Error while deleting the attachment", ex)
+              InternalServerError("Failed to delete attachment")
+            }
+      }
+    }
