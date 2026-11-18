@@ -596,7 +596,7 @@ class RdsCandeProxyConnectorSpec
 
     "return error when the rds-cande-proxy returns 500" in {
       stubFor(
-        get(urlEqualTo(url))
+        post(urlEqualTo(url))
           .willReturn(aResponse().withStatus(500))
       )
 
