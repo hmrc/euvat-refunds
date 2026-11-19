@@ -61,17 +61,18 @@ class CreateUploadTrackingService @Inject() (
     for
       existing <- repository.get(applicationId)
       initiatedAt = clock.instant()
-      initiated <- upscan.initiate(initiateRequest(applicationId))
-      status = awaitingUpload(applicationId, initiated, initiatedAt)
+      upscanResponse <- upscan.initiate(initiateRequest(applicationId))
+      status = awaitingUpload(applicationId, upscanResponse, initiatedAt)
       stored   <- repository.replaceUpload(status, existing.map(_.reference))
       response <- if stored then Future.successful(CreateUploadTrackingResponse.from(status)) else uploadStoredByAnotherRequest(applicationId, status)
     yield response
 
-  // another request replaced the record first, so return whichever upload is now stored, same functionality added as in NOVA
-  private def uploadStoredByAnotherRequest(applicationId: Long, ours: ValidationStatus.AwaitingUpload): Future[CreateUploadTrackingResponse] =
+  private def uploadStoredByAnotherRequest(applicationId: Long,
+                                           newUploadStatus: ValidationStatus.AwaitingUpload
+                                          ): Future[CreateUploadTrackingResponse] =
     repository.get(applicationId).map {
       case Some(stored: ValidationStatus.AwaitingUpload) => CreateUploadTrackingResponse.from(stored)
-      case _                                             => CreateUploadTrackingResponse.from(ours)
+      case _                                             => CreateUploadTrackingResponse.from(newUploadStatus)
     }
 
   private def initiateRequest(applicationId: Long): UpscanInitiateRequest =
@@ -83,13 +84,13 @@ class CreateUploadTrackingService @Inject() (
       maximumFileSize = appConfig.upscanMaximumFileSize
     )
 
-  private def awaitingUpload(applicationId: Long, initiated: UpscanInitiateResponse, initiatedAt: Instant): ValidationStatus.AwaitingUpload =
+  private def awaitingUpload(applicationId: Long, upscanResponse: UpscanInitiateResponse, initiatedAt: Instant): ValidationStatus.AwaitingUpload =
     ValidationStatus.AwaitingUpload(
       applicationId     = applicationId,
-      reference         = initiated.reference,
-      uploadUrl         = initiated.uploadRequest.href,
+      reference         = upscanResponse.reference,
+      uploadUrl         = upscanResponse.uploadRequest.href,
       initiateTimestamp = initiatedAt,
-      fields            = initiated.uploadRequest.fields,
+      fields            = upscanResponse.uploadRequest.fields,
       createdAt         = initiatedAt,
       updatedAt         = initiatedAt
     )

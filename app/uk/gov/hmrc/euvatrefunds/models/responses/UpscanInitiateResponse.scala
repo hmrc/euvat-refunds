@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.euvatrefunds.models.responses
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{Json, OFormat}
 
 final case class UpscanInitiateResponse(reference: String, uploadRequest: UploadRequest)
 
 object UpscanInitiateResponse:
-  given Reads[UpscanInitiateResponse] = Json.reads[UpscanInitiateResponse]
+  implicit val format: OFormat[UpscanInitiateResponse] = Json.format[UpscanInitiateResponse]

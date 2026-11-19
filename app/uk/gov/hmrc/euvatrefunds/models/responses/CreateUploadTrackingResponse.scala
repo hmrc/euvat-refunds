@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.euvatrefunds.models.responses
 
-import play.api.libs.json.{Json, OWrites}
+import play.api.libs.json.{Json, OFormat, OWrites}
 import uk.gov.hmrc.euvatrefunds.models.upload.ValidationStatus
 
 final case class CreateUploadTrackingResponse(
@@ -27,7 +27,7 @@ final case class CreateUploadTrackingResponse(
 
 object CreateUploadTrackingResponse:
 
-  given OWrites[CreateUploadTrackingResponse] = Json.writes[CreateUploadTrackingResponse]
+  implicit val format: OFormat[CreateUploadTrackingResponse] = Json.format[CreateUploadTrackingResponse]
 
   def from(status: ValidationStatus.AwaitingUpload): CreateUploadTrackingResponse =
     CreateUploadTrackingResponse(status.reference, status.uploadUrl, status.fields)

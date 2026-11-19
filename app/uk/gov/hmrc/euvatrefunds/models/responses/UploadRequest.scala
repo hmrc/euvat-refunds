@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.euvatrefunds.models.responses
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{Json, OFormat}
 
 final case class UploadRequest(href: String, fields: Map[String, String])
 
 object UploadRequest:
-  given Reads[UploadRequest] = Json.reads[UploadRequest]
+  implicit val format: OFormat[UploadRequest] = Json.format[UploadRequest]

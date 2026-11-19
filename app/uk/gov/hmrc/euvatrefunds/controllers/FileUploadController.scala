@@ -39,8 +39,7 @@ class FileUploadController @Inject() (
       createUploadTrackingService
         .createUploadTracking(applicationId)
         .map {
-          case Right(response) =>
-            Created(Json.toJson(response))
+          case Right(response) => Created(Json.toJson(response))
           case Left(CreateUploadTrackingError.ApplicationNotFound) =>
             logger.warn(s"No application found with id $applicationId")
             NotFound(s"No application found with id $applicationId")
