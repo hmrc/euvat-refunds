@@ -24,6 +24,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
+import uk.gov.hmrc.euvatrefunds.models.Attachment
 import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
@@ -703,6 +704,33 @@ class EuVatStubsConnectorSpec
           .willReturn(aResponse().withStatus(500))
       )
       connector.getAttachmentDetails(request).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
+  "EuVatStubsConnector.getAllAttachments" should {
+    val request = GetAllAttachmentsRequest(applicationId = 123456)
+
+    val attachmentsResponse = GetAllAttachmentsResponse(
+      attachments      = List(Attachment(1, Some("hotel-invoice.pdf"), Some("pdf"), Some("Hotel invoice"), Some(1825))),
+      totalAttachments = 1
+    )
+
+    "return the attachments when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/euvat/get-all-attachments"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(attachmentsResponse).toString))
+      )
+
+      connector.getAllAttachments(request).futureValue shouldBe attachmentsResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/euvat/get-all-attachments"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getAllAttachments(request).failed.futureValue shouldBe a[UpstreamErrorResponse]
     }
   }
 
