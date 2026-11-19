@@ -723,4 +723,28 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.deleteAttachment" should {
+    val deleteRequest = DeleteAttachmentRequest(applicationId = 123456, attachmentNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeleteAttachmentResponse(updateSequenceNumber = 8)
+
+    "return the new update sequence number when rds-cande-proxy returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-attachment"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deleteAttachment(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/rds-cande-proxy/euvat/delete-attachment"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deleteAttachment(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }

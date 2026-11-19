@@ -767,4 +767,28 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.deleteAttachment" should {
+    val deleteRequest = DeleteAttachmentRequest(applicationId = 123456, attachmentNumber = 4, updateSequenceNumber = 7)
+
+    val deleteResponse = DeleteAttachmentResponse(updateSequenceNumber = 8)
+
+    "return the new update sequence number when euvat-stubs returns 200" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-attachment"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(deleteResponse).toString))
+      )
+
+      connector.deleteAttachment(deleteRequest).futureValue shouldBe deleteResponse
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        delete(urlEqualTo("/euvat-stubs/delete-attachment"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.deleteAttachment(deleteRequest).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }
