@@ -20,3 +20,4 @@ DELETE    /delete-import                                                  uk.gov
 POST      /get-reference-information-count                                uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getReferenceInformationCount
 GET       /get-application-details/:applicationId                         uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getApplicationDetails(applicationId: Long)
 GET       /get-attachment-details/:applicationId/:attachmentNumber        uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getAttachmentDetails(applicationId: Long, attachmentNumber: Int)
+DELETE    /delete-attachment                                              uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteAttachment
