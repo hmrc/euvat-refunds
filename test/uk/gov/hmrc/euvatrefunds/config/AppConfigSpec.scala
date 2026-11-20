@@ -20,6 +20,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 
+import java.time.Duration
+import java.time.temporal.ChronoUnit
+
 class AppConfigSpec extends AnyWordSpec with Matchers {
 
   "AppConfig" should {
@@ -70,6 +73,16 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
       val appConfig = new AppConfig(config)
       appConfig.baseUrl("euvat-stubs") shouldBe "http://localhost:18000"
       appConfig.appName                shouldBe "test-service"
+    }
+
+    "load upload-tracking.expiry-period from configuration" in {
+      val config = Configuration(
+        "appName"                       -> "test-service",
+        "upload-tracking.expiry-period" -> "2 days"
+      )
+
+      val appConfig = new AppConfig(config)
+      appConfig.uploadTrackingExpiryPeriod shouldBe Duration.of(2L, ChronoUnit.DAYS)
     }
 
   }
