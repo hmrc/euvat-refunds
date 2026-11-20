@@ -17,11 +17,11 @@
 package uk.gov.hmrc.euvatrefunds.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import com.typesafe.config.ConfigFactory
+import org.mockito.Mockito.when
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.Configuration
+import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
 import uk.gov.hmrc.euvatrefunds.models.responses.TraderKnownFactsResponse
@@ -40,21 +40,11 @@ class RdsCacheProxyConnectorSpec
 
   private given HeaderCarrier = HeaderCarrier()
 
-  private lazy val configuration: Configuration =
-    Configuration(
-      ConfigFactory.parseString(
-        s"""
-           |appName = euvat-refunds
-           |microservice.services.rds-datacache-proxy.host = "$wireMockHost"
-           |microservice.services.rds-datacache-proxy.protocol = "http"
-           |microservice.services.rds-datacache-proxy.port = $wireMockPort
-           |""".stripMargin
-      )
-    )
+  private lazy val mockAppConfig: AppConfig = mock[AppConfig]
+  when(mockAppConfig.appName).thenReturn("euvat-refunds")
+  when(mockAppConfig.baseUrl("rds-datacache-proxy")).thenReturn(s"http://$wireMockHost:$wireMockPort")
 
-  private lazy val appConfig: AppConfig = new AppConfig(configuration)
-
-  private lazy val connector: RdsCacheProxyConnector = new RdsCacheProxyConnector(appConfig, httpClientV2)
+  private lazy val connector: RdsCacheProxyConnector = new RdsCacheProxyConnector(mockAppConfig, httpClientV2)
 
   private val sampleFacts = TraderKnownFactsResponse(
     vatRegNumber           = 123456789,

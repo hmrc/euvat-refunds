@@ -17,13 +17,14 @@
 package uk.gov.hmrc.euvatrefunds.repositories
 
 import org.apache.pekko.actor.ActorSystem
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import uk.gov.hmrc.euvatrefunds.models.responses.UploadSummaryResponse
-import uk.gov.hmrc.euvatrefunds.models.{FileStatus, UploadSummary, UploadSummaryItem}
+import uk.gov.hmrc.euvatrefunds.models.{FileStatus, UploadSummaryItem}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext
@@ -45,38 +46,81 @@ class EuVatFileUploadRepositoryIntegrationSpec
   override protected val repository = new EuVatFileUploadMongoRepository(mongoComponent)
 
   private val fileUploadRepository = new EuVatFileUploadMongoRepository(mongoComponent)
-  private val applicationId = 12345L
-  private val uploadSummaryItem = UploadSummaryItem(
-    applicationId = applicationId,
-    reference     = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
-    fileStatus    = FileStatus.AWAITING_UPLOAD,
-    uploadUrl     = Option("https://xxxx/upscan-upload-proxy/bucketName"),
-    fields        = Option(Map("acl" -> "private", "x-amz-signature" -> "xxxx", "x-amz-date" -> "yyyyMMddThhmmssZ"))
-  )
-
-  private val uploadSummaryResponse = UploadSummaryResponse(
-    applicationId = applicationId,
-    uploads = Seq(
-      UploadSummary(
-        reference  = uploadSummaryItem.reference,
-        fileStatus = uploadSummaryItem.fileStatus,
-        uploadUrl  = uploadSummaryItem.uploadUrl,
-        fields     = uploadSummaryItem.fields
-      )
-    )
-  )
 
   override def beforeEach(): Unit = {
     prepareDatabase()
   }
 
-  "EuVatFileUploadRepository" should {
-    "retrieve uploads from database" in {
-      repository.collection.insertOne(uploadSummaryItem).map(_.wasAcknowledged()).head().futureValue
+  "EuVatFileUploadRepository.getUploadSummary" should {
+    
+    "retrieve all uploads for given applicationId from database" in {
+      val applicationId1 = 1L
+      val uploadSummaryItem1 = createUploadSummaryItem(applicationId1, "ref-1")
+      val uploadSummaryItem2 = createUploadSummaryItem(applicationId1, "ref-2")
+      val uploadSummaryItem3 = createUploadSummaryItem(2L, "ref-3")
 
-      val result = fileUploadRepository.getUploadSummary(uploadSummaryItem.applicationId)(ec).futureValue
+      insertItemsIntoDb(uploadSummaryItem1)
+      insertItemsIntoDb(uploadSummaryItem2)
+      insertItemsIntoDb(uploadSummaryItem3)
 
-      result.value shouldBe uploadSummaryResponse
+      val result = fileUploadRepository.getUploadSummary(applicationId1)(ec).futureValue
+
+      result shouldBe Seq(uploadSummaryItem1, uploadSummaryItem2)
     }
+  }
+
+  "EuVatFileUploadRepository.deleteUploadTracking" should {
+    
+    "delete all uploads having the given applicationId from database" in {
+      val applicationId1 = 1L
+      val uploadSummaryItem1 = createUploadSummaryItem(applicationId1, "ref-1")
+      val uploadSummaryItem2 = createUploadSummaryItem(applicationId1, "ref-2")
+      val uploadSummaryItem3 = createUploadSummaryItem(2L, "ref-3")
+
+      insertItemsIntoDb(uploadSummaryItem1)
+      insertItemsIntoDb(uploadSummaryItem2)
+      insertItemsIntoDb(uploadSummaryItem3)
+
+      val result = fileUploadRepository.deleteUploadTracking(applicationId1)(ec).futureValue
+
+      result.success shouldBe true
+      val itemsPostDeletion = getItemsFromDb(Filters.equal("applicationId", applicationId1))
+      itemsPostDeletion shouldBe empty
+    }
+  }
+
+  "EuVatFileUploadRepository.deleteUploadTrackingByReference" should {
+    
+    "delete single upload having the given applicationId and reference from database" in {
+      val applicationId = 1L
+      val reference1 = "ref-1"
+      val uploadSummaryItem1 = createUploadSummaryItem(applicationId, reference1)
+      val uploadSummaryItem2 = createUploadSummaryItem(applicationId, "ref-2")
+
+      insertItemsIntoDb(uploadSummaryItem1)
+      insertItemsIntoDb(uploadSummaryItem2)
+
+      val result = fileUploadRepository.deleteUploadTrackingByReference(applicationId, reference1)(ec).futureValue
+
+      result.success shouldBe true
+      val queryFilter = Filters.and(Filters.equal("applicationId", applicationId), Filters.equal("reference", reference1))
+      val itemsPostDeletion = getItemsFromDb(queryFilter)
+      itemsPostDeletion shouldBe empty
+    }
+  }
+
+  private def insertItemsIntoDb(item: UploadSummaryItem) =
+    repository.collection.insertOne(item).map(_.wasAcknowledged()).head().futureValue
+
+  private def getItemsFromDb(queryFilter: Bson) = repository.collection.find(queryFilter).headOption().futureValue
+
+  private def createUploadSummaryItem(applicationId: Long, reference: String) = {
+    UploadSummaryItem(
+      applicationId = applicationId,
+      reference     = reference,
+      fileStatus    = FileStatus.AWAITING_UPLOAD,
+      uploadUrl     = Option("https://xxxx/upscan-upload-proxy/bucketName"),
+      fields        = Option(Map("acl" -> "private", "x-amz-signature" -> "xxxx", "x-amz-date" -> "yyyyMMddThhmmssZ"))
+    )
   }
 }

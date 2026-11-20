@@ -18,10 +18,13 @@ package uk.gov.hmrc.euvatrefunds.models
 
 import play.api.libs.json.*
 
+import java.time.Instant
+
 final case class UploadSummaryItem(
   applicationId: Long,
   reference: String,
   fileStatus: FileStatus,
+  initiateTimestamp: Option[Instant] = None,
   uploadUrl: Option[String] = None,
   fields: Option[Map[String, String]] = None
 )

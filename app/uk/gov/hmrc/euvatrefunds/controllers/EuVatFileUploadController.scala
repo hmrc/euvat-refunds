@@ -38,16 +38,31 @@ class EuVatFileUploadController @Inject() (
     authorise.async { _ =>
       uploadSummaryService
         .getUploadSummary(applicationId)
-        .map {
-          case Some(summary) =>
-            logger.info(s"Retrieved upload summary for applicationId: $applicationId with ${summary.uploads.size} upload(s)")
-            Ok(Json.toJson(summary))
-          case None =>
-            logger.warn(s"No uploads found for applicationId=$applicationId")
-            NotFound(s"No upload records found for applicationId: $applicationId")
-        }
+        .map(summary => Ok(Json.toJson(summary)))
         .recover { case ex =>
           logger.error(s"Error retrieving upload summary for applicationId: $applicationId: ${ex.getMessage}", ex)
+          InternalServerError("Currently experiencing issues with our service")
+        }
+    }
+
+  def deleteUploadTracking(applicationId: Long): Action[AnyContent] =
+    authorise.async { _ =>
+      uploadSummaryService
+        .deleteUploadTracking(applicationId)
+        .map(result => Ok(Json.toJson(result)))
+        .recover { case ex =>
+          logger.error(s"Error deleting upload tracking for applicationId: $applicationId: ${ex.getMessage}", ex)
+          InternalServerError("Currently experiencing issues with our service")
+        }
+    }
+
+  def deleteUploadTrackingByReference(applicationId: Long, reference: String): Action[AnyContent] =
+    authorise.async { _ =>
+      uploadSummaryService
+        .deleteUploadTrackingByReference(applicationId, reference)
+        .map(result => Ok(Json.toJson(result)))
+        .recover { case ex =>
+          logger.error(s"Error deleting upload tracking for applicationId: $applicationId and reference: $reference: ${ex.getMessage}", ex)
           InternalServerError("Currently experiencing issues with our service")
         }
     }

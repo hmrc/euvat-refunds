@@ -17,11 +17,11 @@
 package uk.gov.hmrc.euvatrefunds.repositories
 
 import com.google.inject.{ImplementedBy, Inject, Singleton}
-import org.mongodb.scala.model.Filters.equal
-import org.mongodb.scala.model.{IndexModel, Indexes}
+import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.{Filters, IndexModel, Indexes}
 import play.api.Logging
-import uk.gov.hmrc.euvatrefunds.models.responses.UploadSummaryResponse
-import uk.gov.hmrc.euvatrefunds.models.{UploadSummary, UploadSummaryItem}
+import uk.gov.hmrc.euvatrefunds.models.UploadSummaryItem
+import uk.gov.hmrc.euvatrefunds.models.responses.DeleteUploadTrackingResponse
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
@@ -29,7 +29,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @ImplementedBy(classOf[EuVatFileUploadMongoRepository])
 trait EuVatFileUploadRepository {
-  def getUploadSummary(applicationId: Long)(implicit ec: ExecutionContext): Future[Option[UploadSummaryResponse]]
+  def getUploadSummary(applicationId: Long)(implicit ec: ExecutionContext): Future[Seq[UploadSummaryItem]]
+
+  def deleteUploadTracking(applicationId: Long)(implicit ec: ExecutionContext): Future[DeleteUploadTrackingResponse]
+
+  def deleteUploadTrackingByReference(applicationId: Long, reference: String)(implicit ec: ExecutionContext): Future[DeleteUploadTrackingResponse]
 }
 
 @Singleton
@@ -43,28 +47,41 @@ class EuVatFileUploadMongoRepository @Inject() (mongoComponent: MongoComponent)(
     with EuVatFileUploadRepository
     with Logging {
 
-  override def getUploadSummary(applicationId: Long)(implicit ec: ExecutionContext): Future[Option[UploadSummaryResponse]] =
+  override def getUploadSummary(applicationId: Long)(implicit ec: ExecutionContext): Future[Seq[UploadSummaryItem]] =
     collection
       .find(equal("applicationId", applicationId))
       .toFuture()
       .map(_.toSeq)
-      .recoverWith { case ex =>
-        logger.error(s"Failed to find file upload summary with applicationId: $applicationId", ex)
-        Future.failed(ex)
+      .recoverWith(logErrorAndFail(s"Failed to find file upload summary with applicationId: $applicationId", _))
+
+  override def deleteUploadTracking(applicationId: Long)(implicit ec: ExecutionContext): Future[DeleteUploadTrackingResponse] = {
+    collection
+      .deleteMany(equal("applicationId", applicationId))
+      .headOption()
+      .recoverWith(logErrorAndFail(s"Failed to upload tracking for applicationId: $applicationId", _))
+      .map {
+        case Some(deleteResult) => DeleteUploadTrackingResponse(success = deleteResult.getDeletedCount > 0)
+        case None               => DeleteUploadTrackingResponse(success = false)
       }
-      .map { uploadItems =>
-        if (uploadItems.nonEmpty) {
-          val uploads = uploadItems.map { uploadItem =>
-            UploadSummary(
-              reference  = uploadItem.reference,
-              fileStatus = uploadItem.fileStatus,
-              uploadUrl  = uploadItem.uploadUrl,
-              fields     = uploadItem.fields
-            )
-          }
-          Option(UploadSummaryResponse(applicationId, uploads))
-        } else None
+  }
+
+  override def deleteUploadTrackingByReference(applicationId: Long, reference: String)(implicit
+    ec: ExecutionContext
+  ): Future[DeleteUploadTrackingResponse] = {
+    collection
+      .deleteOne(and(equal("applicationId", applicationId), equal("reference", reference)))
+      .headOption()
+      .recoverWith(logErrorAndFail(s"Failed to delete upload for applicationId: $applicationId and reference: $reference", _))
+      .map {
+        case Some(deleteResult) => DeleteUploadTrackingResponse(success = deleteResult.getDeletedCount > 0)
+        case None               => DeleteUploadTrackingResponse(success = false)
       }
+  }
+
+  private def logErrorAndFail[T](errorMessage: String, ex: Throwable) = {
+    logger.error(errorMessage, ex)
+    Future.failed(ex)
+  }
 }
 
 object EuVatFileUploadMongoRepository {

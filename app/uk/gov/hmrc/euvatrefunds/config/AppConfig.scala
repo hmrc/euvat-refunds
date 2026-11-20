@@ -18,12 +18,15 @@ package uk.gov.hmrc.euvatrefunds.config
 
 import play.api.Configuration
 
+import java.time.Duration
 import javax.inject.{Inject, Singleton}
 
 @Singleton
 class AppConfig @Inject() (config: Configuration):
 
   val appName: String = config.get[String]("appName")
+
+  lazy val uploadTrackingExpiryPeriod: Duration = config.get[Duration]("upload-tracking.expiry-period")
 
   def baseUrl(service: String): String = {
     val protocol: String = config.get[String](s"microservice.services.$service.protocol")

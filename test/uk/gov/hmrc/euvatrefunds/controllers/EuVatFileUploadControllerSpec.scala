@@ -29,7 +29,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.TestUtils
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.models.responses.UploadSummaryResponse
+import uk.gov.hmrc.euvatrefunds.models.responses.{DeleteUploadTrackingResponse, UploadSummaryResponse}
 import uk.gov.hmrc.euvatrefunds.models.{FileStatus, UploadSummary}
 import uk.gov.hmrc.euvatrefunds.services.EuVatFileUploadService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -44,6 +44,8 @@ class EuVatFileUploadControllerSpec extends AnyWordSpec with Matchers with Scala
   private val authAction: AuthAction = TestUtils.createAuthAction()
   private val mockFileUploadService = mock[EuVatFileUploadService]
   private val controller = new EuVatFileUploadController(authAction, mockFileUploadService, stubControllerComponents())
+  private val applicationId = 1234L
+  private val reference = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7"
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -52,12 +54,11 @@ class EuVatFileUploadControllerSpec extends AnyWordSpec with Matchers with Scala
 
   "EuVatFileUploadController.getUploadSummary" should {
 
-    val applicationId = 1234L
     val emptyUploadsResponse = UploadSummaryResponse(applicationId = applicationId, uploads = Nil)
     val uploadsResponse = emptyUploadsResponse.copy(
       uploads = Seq(
         UploadSummary(
-          reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
+          reference  = reference,
           fileStatus = FileStatus.AWAITING_UPLOAD,
           uploadUrl  = Option("https://xxxx/upscan-upload-proxy/bucketName"),
           fields     = Option(Map("acl" -> "private", "x-amz-signature" -> "xxxx", "x-amz-date" -> "yyyyMMddThhmmssZ"))
@@ -67,7 +68,7 @@ class EuVatFileUploadControllerSpec extends AnyWordSpec with Matchers with Scala
 
     "return 200 with JSON when service returns upload summary with uploads" in {
       when(mockFileUploadService.getUploadSummary(mockitoEq(applicationId)))
-        .thenReturn(Future.successful(Option(uploadsResponse)))
+        .thenReturn(Future.successful(uploadsResponse))
 
       val result = controller.getUploadSummary(applicationId)(FakeRequest(GET, s"/$applicationId/get-upload-results"))
 
@@ -77,7 +78,7 @@ class EuVatFileUploadControllerSpec extends AnyWordSpec with Matchers with Scala
 
     "return 200 with JSON when service returns upload summary with empty uploads" in {
       when(mockFileUploadService.getUploadSummary(mockitoEq(applicationId)))
-        .thenReturn(Future.successful(Option(emptyUploadsResponse)))
+        .thenReturn(Future.successful(emptyUploadsResponse))
 
       val result = controller.getUploadSummary(applicationId)(FakeRequest(GET, s"/$applicationId/get-upload-results"))
 
@@ -85,19 +86,86 @@ class EuVatFileUploadControllerSpec extends AnyWordSpec with Matchers with Scala
       contentAsJson(result) shouldBe Json.toJson(emptyUploadsResponse)
     }
 
-    "return 404 when service returns None" in {
-      when(mockFileUploadService.getUploadSummary(any())).thenReturn(Future.successful(None))
-
-      val result = controller.getUploadSummary(applicationId)(FakeRequest(GET, s"/$applicationId/get-upload-results"))
-
-      status(result)        shouldBe NOT_FOUND
-      contentAsString(result) should include(s"No upload records found for applicationId: $applicationId")
-    }
-
     "return 500 when service returns error" in {
       when(mockFileUploadService.getUploadSummary(any())).thenReturn(Future.failed(Exception("Service error")))
 
       val result = controller.getUploadSummary(applicationId)(FakeRequest(GET, s"/$applicationId/get-upload-results"))
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Currently experiencing issues with our service")
+    }
+  }
+
+  "EuVatFileUploadController.deleteUploadTracking" should {
+
+    val successfulDeleteUploadTrackingResponse = DeleteUploadTrackingResponse(success = true)
+    val failedDeleteUploadTrackingResponse = successfulDeleteUploadTrackingResponse.copy(success = false)
+
+    "return 200 with JSON when service returns success = true" in {
+      when(mockFileUploadService.deleteUploadTracking(mockitoEq(applicationId)))
+        .thenReturn(Future.successful(successfulDeleteUploadTrackingResponse))
+
+      val result = controller.deleteUploadTracking(applicationId)(FakeRequest(DELETE, s"/$applicationId/delete-upload-tracking"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(successfulDeleteUploadTrackingResponse)
+    }
+
+    "return 200 when service returns success = false" in {
+      when(mockFileUploadService.deleteUploadTracking(mockitoEq(applicationId)))
+        .thenReturn(Future.successful(failedDeleteUploadTrackingResponse))
+
+      val result = controller.deleteUploadTracking(applicationId)(FakeRequest(DELETE, s"/$applicationId/delete-upload-tracking"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(failedDeleteUploadTrackingResponse)
+    }
+
+    "return 500 when service returns error" in {
+      when(mockFileUploadService.deleteUploadTracking(any())).thenReturn(Future.failed(Exception("Service error")))
+
+      val result = controller.deleteUploadTracking(applicationId)(FakeRequest(DELETE, s"/$applicationId/delete-upload-tracking"))
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Currently experiencing issues with our service")
+    }
+  }
+
+  "EuVatFileUploadController.deleteUploadTrackingByReference" should {
+
+    val successfulDeleteUploadTrackingResponse = DeleteUploadTrackingResponse(success = true)
+    val failedDeleteUploadTrackingResponse = successfulDeleteUploadTrackingResponse.copy(success = false)
+
+    "return 200 with JSON when service returns success = true" in {
+      when(mockFileUploadService.deleteUploadTrackingByReference(mockitoEq(applicationId), mockitoEq(reference)))
+        .thenReturn(Future.successful(successfulDeleteUploadTrackingResponse))
+
+      val result = controller.deleteUploadTrackingByReference(applicationId, reference)(
+        FakeRequest(DELETE, s"/$applicationId/delete-upload-tracking/$reference")
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(successfulDeleteUploadTrackingResponse)
+    }
+
+    "return 200 when service returns success = false" in {
+      when(mockFileUploadService.deleteUploadTrackingByReference(mockitoEq(applicationId), mockitoEq(reference)))
+        .thenReturn(Future.successful(failedDeleteUploadTrackingResponse))
+
+      val result = controller.deleteUploadTrackingByReference(applicationId, reference)(
+        FakeRequest(DELETE, s"/$applicationId/delete-upload-tracking/$reference")
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(failedDeleteUploadTrackingResponse)
+    }
+
+    "return 500 when service returns error" in {
+      when(mockFileUploadService.deleteUploadTrackingByReference(any(), any())).thenReturn(Future.failed(Exception("Service error")))
+
+      val result = controller.deleteUploadTrackingByReference(applicationId, reference)(
+        FakeRequest(DELETE, s"/$applicationId/delete-upload-tracking/$reference")
+      )
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Currently experiencing issues with our service")
