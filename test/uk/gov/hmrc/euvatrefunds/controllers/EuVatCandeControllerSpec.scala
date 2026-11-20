@@ -1001,6 +1001,11 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     "return 400 when request body is invalid" in {
       val result = controller.getAllAttachments()(
         FakeRequest(POST, "/get-all-attachments").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+      status(result) shouldBe BAD_REQUEST
+    }
+  }
+
   "EuVatCandeController.deleteAttachment" should {
 
     val deleteRequest = DeleteAttachmentRequest(applicationId = 123456, attachmentNumber = 4, updateSequenceNumber = 7)
@@ -1039,7 +1044,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       status(result)        shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) should include("Failed to retrieve attachments")
     }
-    
+
     "return 500 and log error when DB call fails" in {
       when(service.deleteAttachment(any())(any()))
         .thenReturn(Future.failed(new RuntimeException("DB error")))

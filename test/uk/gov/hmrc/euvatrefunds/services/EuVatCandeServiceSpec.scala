@@ -1324,7 +1324,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       }
     }
   }
-  
+
   "EuVatCandeService.getAllAttachments" should {
     val request = GetAllAttachmentsRequest(applicationId = 123456L)
 
@@ -1454,7 +1454,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       }
     }
   }
-  
+
   "EuVatCandeService.deleteAttachment" should {
 
     val deleteRequest = DeleteAttachmentRequest(applicationId = 123456, attachmentNumber = 4, updateSequenceNumber = 7)
