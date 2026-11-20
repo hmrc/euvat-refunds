@@ -224,6 +224,23 @@ class EuVatCandeController @Inject() (
       }
     }
 
+  def getAllAttachments: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[GetAllAttachmentsRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for GetAllAttachmentsRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(getAllAttachmentsRequest) =>
+          service
+            .getAllAttachments(getAllAttachmentsRequest)
+            .map(response => Ok(Json.toJson(response)))
+            .recover { case e: Exception =>
+              logger.error("Error retrieving all attachments", e)
+              InternalServerError("Failed to retrieve attachments")
+            }
+      }
+    }
+
   def deleteApplication: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[DeleteApplicationRequest]) match {

@@ -142,6 +142,14 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def getAllAttachments(request: GetAllAttachmentsRequest)(implicit hc: HeaderCarrier): Future[GetAllAttachmentsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getAllAttachments(request)
+    } else {
+      rdsCandeProxyConnector.getAllAttachments(request)
+    }
+  }
+
   def deletePurchase(request: DeletePurchaseRequest)(implicit hc: HeaderCarrier): Future[DeletePurchaseResponse] = {
     if (candeStubbed) {
       euVatStubsConnector.deletePurchase(request)
