@@ -17,11 +17,11 @@
 package uk.gov.hmrc.euvatrefunds.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import com.typesafe.config.ConfigFactory
+import org.mockito.Mockito.when
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.Configuration
+import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
 import uk.gov.hmrc.euvatrefunds.models.requests.*
@@ -42,20 +42,11 @@ class RdsCandeProxyConnectorSpec
 
   private given HeaderCarrier = HeaderCarrier()
 
-  private lazy val configuration: Configuration =
-    Configuration(
-      ConfigFactory.parseString(
-        s"""
-           |appName = euvat-refunds
-           |microservice.services.rds-cande-proxy.host = "$wireMockHost"
-           |microservice.services.rds-cande-proxy.protocol = "http"
-           |microservice.services.rds-cande-proxy.port = $wireMockPort
-           |""".stripMargin
-      )
-    )
+  private lazy val mockAppConfig: AppConfig = mock[AppConfig]
+  when(mockAppConfig.appName).thenReturn("euvat-refunds")
+  when(mockAppConfig.baseUrl("rds-cande-proxy")).thenReturn(s"http://$wireMockHost:$wireMockPort")
 
-  private lazy val appConfig: AppConfig = new AppConfig(configuration)
-  private lazy val connector: RdsCandeProxyConnector = new RdsCandeProxyConnector(appConfig, httpClientV2)
+  private lazy val connector: RdsCandeProxyConnector = new RdsCandeProxyConnector(mockAppConfig, httpClientV2)
 
   "RdsCandeProxyConnector.createApplication" should {
     val appRequest: ApplicationRequest = ApplicationRequest(
@@ -596,7 +587,7 @@ class RdsCandeProxyConnectorSpec
 
     "return error when the rds-cande-proxy returns 500" in {
       stubFor(
-        get(urlEqualTo(url))
+        post(urlEqualTo(url))
           .willReturn(aResponse().withStatus(500))
       )
 

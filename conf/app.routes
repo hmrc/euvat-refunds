@@ -21,3 +21,6 @@ POST      /get-reference-information-count                                uk.gov
 GET       /get-application-details/:applicationId                         uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getApplicationDetails(applicationId: Long)
 GET       /get-attachment-details/:applicationId/:attachmentNumber        uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getAttachmentDetails(applicationId: Long, attachmentNumber: Int)
 DELETE    /delete-attachment                                              uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteAttachment
+GET       /:applicationId/get-upload-results                              uk.gov.hmrc.euvatrefunds.controllers.EuVatFileUploadController.getUploadSummary(applicationId: Long)
+DELETE    /:applicationId/delete-upload-tracking                          uk.gov.hmrc.euvatrefunds.controllers.EuVatFileUploadController.deleteUploadTracking(applicationId: Long)
+DELETE    /:applicationId/delete-upload-tracking/:reference               uk.gov.hmrc.euvatrefunds.controllers.EuVatFileUploadController.deleteUploadTrackingByReference(applicationId: Long, reference: String)
