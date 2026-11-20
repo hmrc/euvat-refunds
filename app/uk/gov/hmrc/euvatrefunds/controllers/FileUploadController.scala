@@ -34,10 +34,14 @@ class FileUploadController @Inject() (
     extends BackendController(cc)
     with Logging:
 
-  def createUploadTracking(applicationId: Long): Action[AnyContent] =
+  def createUploadTracking(
+    applicationId: Long,
+    successRedirect: Option[String],
+    errorRedirect: Option[String]
+  ): Action[AnyContent] =
     authorise.async { implicit request =>
       createUploadTrackingService
-        .createUploadTracking(applicationId)
+        .createUploadTracking(applicationId, successRedirect, errorRedirect)
         .map {
           case Right(response) => Created(Json.toJson(response))
           case Left(CreateUploadTrackingError.ApplicationNotFound) =>
