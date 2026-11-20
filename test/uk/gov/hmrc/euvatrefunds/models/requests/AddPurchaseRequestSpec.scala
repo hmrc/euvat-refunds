@@ -26,9 +26,9 @@ class AddPurchaseRequestSpec extends AnyWordSpec with Matchers {
 
   private val request = AddPurchaseRequest(
     applicationId              = 123456,
-    goodsDescriptionCategory   = "1234",
+    goodsDescriptionCode       = "1234",
     goodsDescriptionText       = Some("Fuel"),
-    purchaseSubcategory        = Some("5678"),
+    goodsDescriptionSubCode    = Some("5678"),
     simplifiedInvoiceIndicator = Some("false"),
     supplierName               = Some("ABC GmbH"),
     supplierAddress1           = Some("Line 1"),
@@ -53,9 +53,9 @@ class AddPurchaseRequestSpec extends AnyWordSpec with Matchers {
 
     "deserialize when optional fields are absent" in {
       val json = Json.obj(
-        "applicationId"            -> 123456,
-        "goodsDescriptionCategory" -> "1",
-        "updateSequenceNumber"     -> 1
+        "applicationId"        -> 123456,
+        "goodsDescriptionCode" -> "1",
+        "updateSequenceNumber" -> 1
       )
       val result = json.as[AddPurchaseRequest]
 

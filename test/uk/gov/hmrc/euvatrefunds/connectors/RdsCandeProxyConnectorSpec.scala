@@ -143,9 +143,9 @@ class RdsCandeProxyConnectorSpec
 
     val purchaseRequest = AddPurchaseRequest(
       applicationId              = 123456,
-      goodsDescriptionCategory   = "1",
+      goodsDescriptionCode       = "1",
       goodsDescriptionText       = Some("Fuel"),
-      purchaseSubcategory        = None,
+      goodsDescriptionSubCode    = None,
       simplifiedInvoiceIndicator = None,
       supplierName               = None,
       supplierAddress1           = None,
@@ -183,9 +183,9 @@ class RdsCandeProxyConnectorSpec
 
   "RdsCandeProxyConnector.addImport" should {
     val req = AddImportRequest(
-      applicationId            = 123456,
-      goodsDescriptionCategory = "1",
-      updateSequenceNumber     = 1
+      applicationId        = 123456,
+      goodsDescriptionCode = "1",
+      updateSequenceNumber = 1
     )
 
     val resp = AddImportResponse(itemNumber = 1, updateSequenceNumber = 1)
@@ -331,25 +331,25 @@ class RdsCandeProxyConnectorSpec
     val updateResponse = UpdatePurchaseResponse(updateSequenceNumber = 3)
 
     val updateRequest = UpdatePurchaseRequest(
-      applicationId               = 123456,
-      itemNumber                  = 1,
-      goodsDescriptionCategory    = "1",
-      goodsDescriptionSubCategory = None,
-      goodsDescriptionText        = Some("Fuel"),
-      simplifiedInvoiceIndicator  = None,
-      supplierName                = None,
-      supplierAddress1            = None,
-      supplierAddress2            = None,
-      supplierAddress3            = None,
-      supplierVatRegNumber        = None,
-      supplierTaxIdentifier       = None,
-      invoiceDate                 = None,
-      invoiceNumber               = None,
-      currencyCode                = None,
-      taxableAmount               = None,
-      vatAmount                   = None,
-      deductibleVatAmount         = None,
-      updateSequenceNumber        = 1
+      applicationId              = 123456,
+      itemNumber                 = 1,
+      goodsDescriptionCode       = "1",
+      goodsDescriptionSubCode    = None,
+      goodsDescriptionText       = Some("Fuel"),
+      simplifiedInvoiceIndicator = None,
+      supplierName               = None,
+      supplierAddress1           = None,
+      supplierAddress2           = None,
+      supplierAddress3           = None,
+      supplierVatRegNumber       = None,
+      supplierTaxIdentifier      = None,
+      invoiceDate                = None,
+      invoiceNumber              = None,
+      currencyCode               = None,
+      taxableAmount              = None,
+      vatAmount                  = None,
+      deductibleVatAmount        = None,
+      updateSequenceNumber       = 1
     )
 
     "return update response when rds-cande-proxy returns 200" in {
@@ -418,26 +418,26 @@ class RdsCandeProxyConnectorSpec
 
   "RdsCandeProxyConnector.getImportDetails" should {
     val detailsResponse = GetImportDetailsResponse(
-      applicationId               = 123456L,
-      itemNumber                  = 4,
-      issuingDate                 = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
-      supplierName                = Some("Supplier Ltd"),
-      supplierAddressLine1        = Some("1 High Street"),
-      supplierAddressLine2        = Some("Riga"),
-      supplierAddressLine3        = None,
-      supplierCountryCode         = Some("LV"),
-      goodsDescriptionCategory    = "1",
-      currencyCode                = Some("EUR"),
-      taxableAmount               = Some(BigDecimal("100.50")),
-      vatAmount                   = Some(BigDecimal("21.10")),
-      deductibleVatAmount         = Some(BigDecimal("21.10")),
-      hasSadReferenceNumber       = Some("false"),
-      sadReferenceNumber          = Some("SAD-123"),
-      referenceInformation        = Some("Ref Info"),
-      goodsDescriptionText        = Some("Fuel"),
-      goodsDescriptionSubcategory = Some("1.1"),
-      updateSequenceNumber        = 42,
-      periodStartDate             = LocalDateTime.of(2025, 1, 1, 0, 0)
+      applicationId           = 123456L,
+      itemNumber              = 4,
+      issuingDate             = Some(LocalDateTime.of(2025, 3, 15, 0, 0)),
+      supplierName            = Some("Supplier Ltd"),
+      supplierAddressLine1    = Some("1 High Street"),
+      supplierAddressLine2    = Some("Riga"),
+      supplierAddressLine3    = None,
+      supplierCountryCode     = Some("LV"),
+      goodsDescriptionCode    = "1",
+      currencyCode            = Some("EUR"),
+      taxableAmount           = Some(BigDecimal("100.50")),
+      vatAmount               = Some(BigDecimal("21.10")),
+      deductibleVatAmount     = Some(BigDecimal("21.10")),
+      hasSadReferenceNumber   = Some("false"),
+      sadReferenceNumber      = Some("SAD-123"),
+      referenceInformation    = Some("Ref Info"),
+      goodsDescriptionText    = Some("Fuel"),
+      goodsDescriptionSubCode = Some("1.1"),
+      updateSequenceNumber    = 42,
+      periodStartDate         = LocalDateTime.of(2025, 1, 1, 0, 0)
     )
 
     "return the import details when rds-cande-proxy returns 200" in {
@@ -488,25 +488,25 @@ class RdsCandeProxyConnectorSpec
     val updateResponse = UpdateImportDetailsResponse(updateSequenceNumber = 2)
 
     val updateRequest = UpdateImportDetailsRequest(
-      applicationId               = 404,
-      itemNumber                  = 4,
-      goodsDescriptionCategory    = "10",
-      goodsDescriptionSubCategory = Some("10.4.1"),
-      goodsDescriptionText        = Some("office stationery and consumables"),
-      hasSadReferenceNumber       = Some("true"),
-      sadReferenceNumber          = Some("SAD123456789"),
-      referenceInformation        = Some("Import declaration reference"),
-      supplierName                = Some("Finnish International"),
-      supplierAddressLine1        = Some("356 High Street"),
-      supplierAddressLine2        = Some("Rochdale"),
-      supplierAddressLine3        = Some("England"),
-      supplierCountryCode         = Some("GB"),
-      issuingDate                 = Some(LocalDateTime.of(2026, 5, 14, 0, 0)),
-      currencyCode                = Some("EUR"),
-      taxableAmount               = Some(BigDecimal(1000)),
-      vatAmount                   = Some(BigDecimal(99)),
-      deductibleVatAmount         = Some(BigDecimal(40)),
-      updateSequenceNumber        = 1
+      applicationId           = 404,
+      itemNumber              = 4,
+      goodsDescriptionCode    = "10",
+      goodsDescriptionSubCode = Some("10.4.1"),
+      goodsDescriptionText    = Some("office stationery and consumables"),
+      hasSadReferenceNumber   = Some("true"),
+      sadReferenceNumber      = Some("SAD123456789"),
+      referenceInformation    = Some("Import declaration reference"),
+      supplierName            = Some("Finnish International"),
+      supplierAddressLine1    = Some("356 High Street"),
+      supplierAddressLine2    = Some("Rochdale"),
+      supplierAddressLine3    = Some("England"),
+      supplierCountryCode     = Some("GB"),
+      issuingDate             = Some(LocalDateTime.of(2026, 5, 14, 0, 0)),
+      currencyCode            = Some("EUR"),
+      taxableAmount           = Some(BigDecimal(1000)),
+      vatAmount               = Some(BigDecimal(99)),
+      deductibleVatAmount     = Some(BigDecimal(40)),
+      updateSequenceNumber    = 1
     )
 
     "return update response when rds-cande-proxy returns 200" in {
