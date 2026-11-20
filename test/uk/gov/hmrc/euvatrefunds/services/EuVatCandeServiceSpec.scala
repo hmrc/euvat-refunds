@@ -1388,7 +1388,7 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
       fileName             = "receipt.pdf",
       fileType             = "pdf",
       fileDescription      = Some("Purchase receipt"),
-      fileSize             = fileContent.length.toLong,
+      fileSize             = fileContent.length,
       fileContent          = fileContent,
       updateSequenceNumber = 10
     )

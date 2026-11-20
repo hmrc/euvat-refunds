@@ -990,7 +990,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       fileName             = "receipt.pdf",
       fileType             = "pdf",
       fileDescription      = Some("Purchase receipt"),
-      fileSize             = fileContent.length.toLong,
+      fileSize             = fileContent.length,
       fileContent          = fileContent,
       updateSequenceNumber = 10
     )

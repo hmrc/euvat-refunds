@@ -740,7 +740,7 @@ class EuVatStubsConnectorSpec
       fileName             = "receipt.pdf",
       fileType             = "pdf",
       fileDescription      = Some("Purchase receipt"),
-      fileSize             = fileContent.length.toLong,
+      fileSize             = fileContent.length,
       fileContent          = fileContent,
       updateSequenceNumber = 10
     )

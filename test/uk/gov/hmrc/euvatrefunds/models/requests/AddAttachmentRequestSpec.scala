@@ -30,7 +30,7 @@ class AddAttachmentRequestSpec extends AnyWordSpec with Matchers {
     fileName             = "receipt.pdf",
     fileType             = "pdf",
     fileDescription      = Some("Purchase receipt"),
-    fileSize             = fileContent.length.toLong,
+    fileSize             = fileContent.length,
     fileContent          = fileContent,
     updateSequenceNumber = 10
   )
@@ -56,7 +56,7 @@ class AddAttachmentRequestSpec extends AnyWordSpec with Matchers {
         "fileName"             -> "receipt.pdf",
         "fileType"             -> "pdf",
         "fileDescription"      -> "Purchase receipt",
-        "fileSize"             -> 5L,
+        "fileSize"             -> 5,
         "fileContent"          -> Json.arr(1, 2, 3, 4, 5),
         "updateSequenceNumber" -> 10
       )
@@ -78,7 +78,7 @@ class AddAttachmentRequestSpec extends AnyWordSpec with Matchers {
         "applicationId"        -> 123456L,
         "fileName"             -> "receipt.pdf",
         "fileType"             -> "pdf",
-        "fileSize"             -> 5L,
+        "fileSize"             -> 5,
         "fileContent"          -> Json.arr(1, 2, 3, 4, 5),
         "updateSequenceNumber" -> 10
       )
@@ -94,7 +94,7 @@ class AddAttachmentRequestSpec extends AnyWordSpec with Matchers {
         "fileName"             -> "receipt.pdf",
         "fileType"             -> "pdf",
         "fileDescription"      -> "Purchase receipt",
-        "fileSize"             -> 5L,
+        "fileSize"             -> 5,
         "fileContent"          -> Json.arr(1, 2, 3, 4, 5),
         "updateSequenceNumber" -> 10
       )

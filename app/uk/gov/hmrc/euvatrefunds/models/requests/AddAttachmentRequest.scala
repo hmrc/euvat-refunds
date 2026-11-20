@@ -23,7 +23,7 @@ case class AddAttachmentRequest(
   fileName: String,
   fileType: String,
   fileDescription: Option[String],
-  fileSize: Long,
+  fileSize: Int,
   fileContent: Array[Byte],
   updateSequenceNumber: Int
 )
