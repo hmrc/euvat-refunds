@@ -43,11 +43,13 @@ class CreateUploadTrackingService @Inject() (
 )(implicit ec: ExecutionContext):
 
   def createUploadTracking(
-    applicationId: Long
+    applicationId: Long,
+    successRedirect: Option[String] = None,
+    errorRedirect: Option[String] = None
   )(implicit hc: HeaderCarrier): Future[Either[CreateUploadTrackingError, CreateUploadTrackingResponse]] =
     applicationExists(applicationId).flatMap {
       case false => Future.successful(Left(CreateUploadTrackingError.ApplicationNotFound))
-      case true  => startUpload(applicationId).map(Right(_))
+      case true  => startUpload(applicationId, successRedirect, errorRedirect).map(Right(_))
     }
 
   // assumes an unknown application comes back as a 404 from rds-cande-proxy
@@ -57,11 +59,13 @@ class CreateUploadTrackingService @Inject() (
       .map(_ => true)
       .recover { case UpstreamErrorResponse.WithStatusCode(404) => false }
 
-  private def startUpload(applicationId: Long)(implicit hc: HeaderCarrier): Future[CreateUploadTrackingResponse] =
+  private def startUpload(applicationId: Long, successRedirect: Option[String], errorRedirect: Option[String])(implicit
+    hc: HeaderCarrier
+  ): Future[CreateUploadTrackingResponse] =
     for
       existing <- repository.get(applicationId)
       initiatedAt = clock.instant()
-      upscanResponse <- upscan.initiate(initiateRequest(applicationId))
+      upscanResponse <- upscan.initiate(initiateRequest(applicationId, successRedirect, errorRedirect))
       status = awaitingUpload(applicationId, upscanResponse, initiatedAt)
       stored   <- repository.replaceUpload(status, existing.map(_.reference))
       response <- if stored then Future.successful(CreateUploadTrackingResponse.from(status)) else uploadStoredByAnotherRequest(applicationId, status)
@@ -75,11 +79,15 @@ class CreateUploadTrackingService @Inject() (
       case _                                             => CreateUploadTrackingResponse.from(newUploadStatus)
     }
 
-  private def initiateRequest(applicationId: Long): UpscanInitiateRequest =
+  private def initiateRequest(
+    applicationId: Long,
+    successRedirect: Option[String],
+    errorRedirect: Option[String]
+  ): UpscanInitiateRequest =
     UpscanInitiateRequest(
       callbackUrl     = s"${appConfig.upscanCallbackBaseUrl}/$applicationId/upscan-callback",
-      successRedirect = appConfig.upscanSuccessRedirect,
-      errorRedirect   = appConfig.upscanErrorRedirect,
+      successRedirect = successRedirect.getOrElse(appConfig.upscanSuccessRedirect),
+      errorRedirect   = errorRedirect.getOrElse(appConfig.upscanErrorRedirect),
       minimumFileSize = appConfig.upscanMinimumFileSize,
       maximumFileSize = appConfig.upscanMaximumFileSize
     )

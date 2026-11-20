@@ -20,7 +20,7 @@ POST      /get-sad-reference-count                           uk.gov.hmrc.euvatre
 DELETE    /delete-import                                     uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteImport
 POST      /get-reference-information-count                   uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getReferenceInformationCount
 GET       /get-application-details/:applicationId            uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getApplicationDetails(applicationId: Long)
-POST      /:applicationId/create-upload-tracking             uk.gov.hmrc.euvatrefunds.controllers.FileUploadController.createUploadTracking(applicationId: Long)
+POST      /:applicationId/create-upload-tracking             uk.gov.hmrc.euvatrefunds.controllers.FileUploadController.createUploadTracking(applicationId: Long, successRedirect: Option[String] ?= None, errorRedirect: Option[String] ?= None)
 GET       /get-attachment-details/:applicationId/:attachmentNumber      uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getAttachmentDetails(applicationId: Long, attachmentNumber: Int)
 POST      /get-all-attachments                                            uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getAllAttachments
 GET       /get-full-attachment-details/:applicationId/:attachmentNumber   uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getFullAttachmentDetails(applicationId: Long, attachmentNumber: Int)
