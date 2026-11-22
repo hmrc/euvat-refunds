@@ -24,8 +24,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.requests.UpscanInitiateRequest
-import uk.gov.hmrc.euvatrefunds.models.responses.{UploadRequest, UpscanInitiateResponse}
+import uk.gov.hmrc.euvatrefunds.models.upload.{UploadRequest, UpscanInitiateRequest, UpscanInitiateResponse}
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 

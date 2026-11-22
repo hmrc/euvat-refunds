@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.euvatrefunds.models.responses
+package uk.gov.hmrc.euvatrefunds.models.upscan
 
 import play.api.libs.json.{Json, OFormat}
 
-final case class UploadRequest(href: String, fields: Map[String, String])
+case class UpscanFileReference(
+  reference: String
+)
 
-object UploadRequest:
-  implicit val format: OFormat[UploadRequest] = Json.format[UploadRequest]
+object UpscanFileReference:
+  given OFormat[UpscanFileReference] = Json.format[UpscanFileReference]
+
+case class UpscanInitiateResponse(
+  fileReference: UpscanFileReference,
+  postTarget: String,
+  formFields: Map[String, String]
+)
+
+object UpscanInitiateResponse:
+  given OFormat[UpscanInitiateResponse] = Json.format[UpscanInitiateResponse]

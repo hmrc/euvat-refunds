@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.euvatrefunds.models.responses
+package uk.gov.hmrc.euvatrefunds.models.upscan
 
-import play.api.libs.json.{Json, OFormat}
+import org.bson.types.ObjectId
 
-final case class UpscanInitiateResponse(reference: String, uploadRequest: UploadRequest)
+import java.net.URL
 
-object UpscanInitiateResponse:
-  implicit val format: OFormat[UpscanInitiateResponse] = Json.format[UpscanInitiateResponse]
+sealed trait UploadStatus
+object UploadStatus:
+  case object InProgress extends UploadStatus
+  case object Failed     extends UploadStatus
+  case class UploadedSuccessfully(
+    name: String,
+    mimeType: String,
+    downloadUrl: URL,
+    size: Option[Long],
+    checksum: String
+  ) extends UploadStatus
+
+case class UploadDetails(
+  id: ObjectId,
+  applicationId: Long,
+  reference: Reference,
+  status: UploadStatus
+)

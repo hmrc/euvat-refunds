@@ -27,10 +27,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.connectors.UpscanInitiateConnector
-import uk.gov.hmrc.euvatrefunds.models.requests.UpscanInitiateRequest
-import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationDetailsResponse, CreateUploadTrackingResponse, UploadRequest, UpscanInitiateResponse}
-import uk.gov.hmrc.euvatrefunds.models.upload.ValidationStatus
+import uk.gov.hmrc.euvatrefunds.models.responses.{ApplicationDetailsResponse, CreateUploadTrackingResponse}
+import uk.gov.hmrc.euvatrefunds.models.upload.{UploadRequest, UpscanInitiateRequest, UpscanInitiateResponse, ValidationStatus}
 import uk.gov.hmrc.euvatrefunds.repositories.ValidationStatusRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 

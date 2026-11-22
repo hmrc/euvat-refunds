@@ -62,8 +62,7 @@ class EuVatCandeController @Inject() (
           service.getLatestApplications(latestApplicationRequest).map { response =>
             Ok(Json.toJson(response))
           }
-        case None =>
-          Future.successful(BadRequest("Invalid request body"))
+        case None => Future.successful(BadRequest("Invalid request body"))
       }
     }
 
