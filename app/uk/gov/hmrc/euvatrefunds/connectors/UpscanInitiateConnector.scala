@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.euvatrefunds.connectors
 
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
@@ -32,7 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class UpscanInitiateConnector @Inject() (
   appConfig: AppConfig,
   http: HttpClientV2
-)(implicit ec: ExecutionContext):
+)(implicit ec: ExecutionContext)
+    extends Logging:
 
   private val baseUrl: String = appConfig.baseUrl("upscan-initiate") + "/upscan"
 
@@ -41,3 +43,7 @@ class UpscanInitiateConnector @Inject() (
       .post(url"$baseUrl/v2/initiate")
       .withBody(Json.toJson(request))
       .execute[UpscanInitiateResponse]
+      .map { response =>
+        logger.info(s"POST $baseUrl/v2/initiate succeeded, reference ${response.reference}")
+        response
+      }
