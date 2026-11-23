@@ -1038,7 +1038,7 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       when(service.getAllAttachments(any())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
 
       val result = controller.getAllAttachments()(
-        FakeRequest(POST, "/get-all-attachments").withJsonBody(Json.toJson(request))
+        FakeRequest(POST, "/get-all-attachments").withJsonBody(Json.toJson(deleteRequest))
       )
 
       status(result)        shouldBe INTERNAL_SERVER_ERROR
