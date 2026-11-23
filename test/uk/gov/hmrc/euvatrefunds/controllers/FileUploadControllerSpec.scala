@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.euvatrefunds.controllers
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{reset, when}
+import org.mockito.ArgumentMatchers.{any, eq as mockitoEq}
+import org.mockito.Mockito.{reset, verify, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -38,12 +38,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutures with MockitoSugar with BeforeAndAfterEach {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
+
   private val service = mock[CreateUploadTrackingService]
 
   private val authAction: AuthAction = new AuthAction {
     override def parser: BodyParser[AnyContent] = stubControllerComponents().parsers.defaultBodyParser
     override protected def executionContext: ExecutionContext = ec
-
     override def invokeBlock[A](
       request: Request[A],
       block: AuthenticatedRequest[A] => Future[Result]
@@ -68,6 +68,7 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
   }
 
   "FileUploadController.createUploadTracking" should {
+
     val applicationId = 133L
     val request = FakeRequest(POST, s"/$applicationId/create-upload-tracking")
 
@@ -78,33 +79,51 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     )
 
     "return 201 with the upload details when tracking is created" in {
-      when(service.createUploadTracking(any[Long]())(any()))
+      when(service.createUploadTracking(any[Long](), any(), any())(any()))
         .thenReturn(Future.successful(Right(response)))
 
-      val result = controller.createUploadTracking(applicationId)(request)
+      val result = controller.createUploadTracking(applicationId, None, None)(request)
 
       status(result)        shouldBe CREATED
       contentAsJson(result) shouldBe Json.toJson(response)
     }
 
     "return 404 when the application does not exist" in {
-      when(service.createUploadTracking(any[Long]())(any()))
+      when(service.createUploadTracking(any[Long](), any(), any())(any()))
         .thenReturn(Future.successful(Left(CreateUploadTrackingError.ApplicationNotFound)))
 
-      val result = controller.createUploadTracking(applicationId)(request)
+      val result = controller.createUploadTracking(applicationId, None, None)(request)
 
       status(result)          shouldBe NOT_FOUND
       contentAsString(result) shouldBe s"No application found with id $applicationId"
     }
 
     "return 500 when the service fails" in {
-      when(service.createUploadTracking(any[Long]())(any()))
+      when(service.createUploadTracking(any[Long](), any(), any())(any()))
         .thenReturn(Future.failed(new RuntimeException("Upscan unavailable")))
 
-      val result = controller.createUploadTracking(applicationId)(request)
+      val result = controller.createUploadTracking(applicationId, None, None)(request)
 
       status(result)          shouldBe INTERNAL_SERVER_ERROR
       contentAsString(result) shouldBe "Failed to create upload tracking"
+    }
+
+    "pass the redirect URLs to the service" in {
+      when(service.createUploadTracking(any[Long](), any(), any())(any()))
+        .thenReturn(Future.successful(Right(response)))
+
+      val result = controller.createUploadTracking(
+        applicationId,
+        Some("http://success"),
+        Some("http://error")
+      )(request)
+
+      status(result) shouldBe CREATED
+      verify(service).createUploadTracking(
+        mockitoEq(applicationId),
+        mockitoEq(Some("http://success")),
+        mockitoEq(Some("http://error"))
+      )(any())
     }
   }
 }
