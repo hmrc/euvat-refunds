@@ -171,6 +171,29 @@ class EuVatCandeController @Inject() (
       }
     }
 
+  def addAttachment: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[AddAttachmentRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for AddAttachmentRequest")
+          Future.successful(BadRequest("Invalid request body"))
+
+        case Some(attachmentRequest) =>
+          service
+            .addAttachment(attachmentRequest)
+            .map { response =>
+              Ok(Json.toJson(response))
+            }
+            .recover { case ex: Exception =>
+              logger.error(
+                s"Error while adding attachment for applicationId: ${attachmentRequest.applicationId}",
+                ex
+              )
+              InternalServerError("Failed to add attachment")
+            }
+      }
+    }
+
   def updateImportDetails: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[UpdateImportDetailsRequest]) match {

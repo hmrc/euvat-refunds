@@ -791,4 +791,86 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.addAttachment" should {
+
+    val fileContent: Array[Byte] =
+      "receipt contents".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+
+    val request = AddAttachmentRequest(
+      applicationId        = 123456L,
+      fileName             = "receipt.pdf",
+      fileType             = "pdf",
+      fileDescription      = Some("Purchase receipt"),
+      fileSize             = fileContent.length,
+      fileContent          = fileContent,
+      updateSequenceNumber = 10
+    )
+
+    val response = AddAttachmentResponse(
+      attachmentNumber     = 4,
+      updateSequenceNumber = 11
+    )
+
+    "return the add attachment response when euvat-stubs returns 200" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-attachment"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(Json.toJson(response).toString)
+          )
+      )
+
+      connector.addAttachment(request).futureValue shouldBe response
+    }
+
+    "send the attachment request as JSON in the body" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-attachment"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(Json.toJson(response).toString)
+          )
+      )
+
+      connector.addAttachment(request).futureValue
+
+      verify(
+        postRequestedFor(urlEqualTo("/euvat-stubs/add-attachment"))
+          .withRequestBody(
+            equalToJson(Json.toJson(request).toString)
+          )
+      )
+    }
+
+    "return error when euvat-stubs returns 400" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-attachment"))
+          .willReturn(
+            aResponse().withStatus(400)
+          )
+      )
+
+      connector
+        .addAttachment(request)
+        .failed
+        .futureValue shouldBe a[UpstreamErrorResponse]
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        post(urlEqualTo("/euvat-stubs/add-attachment"))
+          .willReturn(
+            aResponse().withStatus(500)
+          )
+      )
+
+      connector
+        .addAttachment(request)
+        .failed
+        .futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }
