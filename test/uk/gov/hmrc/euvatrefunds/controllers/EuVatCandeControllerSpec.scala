@@ -980,4 +980,90 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.addAttachment" should {
+
+    val fileContent: Array[Byte] =
+      "receipt contents".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+
+    val attachmentRequest = AddAttachmentRequest(
+      applicationId        = 123456L,
+      fileName             = "receipt.pdf",
+      fileType             = "pdf",
+      fileDescription      = Some("Purchase receipt"),
+      fileSize             = fileContent.length,
+      fileContent          = fileContent,
+      updateSequenceNumber = 10
+    )
+
+    val attachmentResponse = AddAttachmentResponse(
+      attachmentNumber     = 4,
+      updateSequenceNumber = 11
+    )
+
+    "return 200 with JSON when service successfully adds the attachment" in {
+      when(service.addAttachment(any())(any()))
+        .thenReturn(Future.successful(attachmentResponse))
+
+      val result = controller.addAttachment()(
+        FakeRequest(POST, "/add-attachment")
+          .withJsonBody(Json.toJson(attachmentRequest))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(attachmentResponse)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.addAttachment()(
+        FakeRequest(POST, "/add-attachment")
+          .withJsonBody(Json.obj("invalid" -> "body"))
+      )
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 400 when request body is missing" in {
+      val result = controller.addAttachment()(
+        FakeRequest(POST, "/add-attachment")
+      )
+
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Invalid request body"
+    }
+
+    "return 500 when service fails while adding the attachment" in {
+      when(service.addAttachment(any())(any()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.addAttachment()(
+        FakeRequest(POST, "/add-attachment")
+          .withJsonBody(Json.toJson(attachmentRequest))
+      )
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to add attachment"
+    }
+
+    "return 500 when the proxy returns an upstream error" in {
+      when(service.addAttachment(any())(any()))
+        .thenReturn(
+          Future.failed(
+            UpstreamErrorResponse(
+              "Failed to add attachment",
+              INTERNAL_SERVER_ERROR
+            )
+          )
+        )
+
+      val result = controller.addAttachment()(
+        FakeRequest(POST, "/add-attachment")
+          .withJsonBody(Json.toJson(attachmentRequest))
+      )
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to add attachment"
+    }
+  }
+
 }
