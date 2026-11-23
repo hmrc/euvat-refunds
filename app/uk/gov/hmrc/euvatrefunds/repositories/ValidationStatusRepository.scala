@@ -60,11 +60,21 @@ class ValidationStatusRepository @Inject() (
       inserted <- insert(newUpload)
     yield inserted
 
-  private def deleteUpload(applicationId: Long, reference: String): Future[Unit] =
+  def deleteUploadByReference(applicationId: Long, reference: String): Future[Boolean] =
+    deleteUpload(applicationId, reference)
+
+  def deleteApplicationUploads(applicationId: Long): Future[Boolean] =
+    collection
+      .deleteOne(byApplicationId(applicationId))
+      .toFuture()
+      .map(_.getDeletedCount > 0)
+
+  private def deleteUpload(applicationId: Long, reference: String) = {
     collection
       .deleteOne(and(byApplicationId(applicationId), equal("reference", reference)))
       .toFuture()
-      .map(_ => ())
+      .map(_.getDeletedCount > 0)
+  }
 
   private def insert(upload: ValidationStatus): Future[Boolean] =
     collection

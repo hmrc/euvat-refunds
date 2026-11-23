@@ -20,8 +20,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 
-import java.time.Duration
-import java.time.temporal.ChronoUnit
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
 class AppConfigSpec extends AnyWordSpec with Matchers {
 
@@ -75,14 +75,14 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
       appConfig.appName                shouldBe "test-service"
     }
 
-    "load upload-tracking.expiry-period from configuration" in {
+    "load awaitingUpload.expiryPeriod from configuration" in {
       val config = Configuration(
-        "appName"                       -> "test-service",
-        "upload-tracking.expiry-period" -> "2 days"
+        "appName"                     -> "test-service",
+        "awaitingUpload.expiryPeriod" -> "2 days"
       )
 
       val appConfig = new AppConfig(config)
-      appConfig.uploadTrackingExpiryPeriod shouldBe Duration.of(2L, ChronoUnit.DAYS)
+      appConfig.awaitingUploadExpiryPeriod shouldBe FiniteDuration(2L, TimeUnit.DAYS)
     }
 
   }
