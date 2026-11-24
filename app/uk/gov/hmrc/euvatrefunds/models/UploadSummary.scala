@@ -17,6 +17,7 @@
 package uk.gov.hmrc.euvatrefunds.models
 
 import play.api.libs.json.*
+import uk.gov.hmrc.euvatrefunds.models.upload.FileStatus
 
 final case class UploadSummary(
   reference: String,

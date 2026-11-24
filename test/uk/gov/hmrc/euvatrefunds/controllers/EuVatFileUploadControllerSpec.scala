@@ -30,7 +30,8 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.TestUtils
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
 import uk.gov.hmrc.euvatrefunds.models.responses.UploadSummaryResponse
-import uk.gov.hmrc.euvatrefunds.models.{FileStatus, UploadSummary}
+import uk.gov.hmrc.euvatrefunds.models.UploadSummary
+import uk.gov.hmrc.euvatrefunds.models.upload.FileStatus
 import uk.gov.hmrc.euvatrefunds.services.EuVatFileUploadService
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -58,7 +59,7 @@ class EuVatFileUploadControllerSpec extends AnyWordSpec with Matchers with Scala
       uploads = Seq(
         UploadSummary(
           reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
-          fileStatus = FileStatus.AWAITING_UPLOAD,
+          fileStatus = FileStatus.AwaitingUpload,
           uploadUrl  = Option("https://xxxx/upscan-upload-proxy/bucketName"),
           fields     = Option(Map("acl" -> "private", "x-amz-signature" -> "xxxx", "x-amz-date" -> "yyyyMMddThhmmssZ"))
         )

@@ -13,7 +13,7 @@ DELETE    /delete-application                                uk.gov.hmrc.euvatre
 PUT       /update-application-details                        uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.updateApplicationDetails
 GET       /get-import-details/:applicationId/:itemNumber     uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getImportDetails(applicationId: Long, itemNumber: Int)
 POST      /add-import                                        uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addImport
-POST      /add-attachment                                                 uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addAttachment
+POST      /add-attachment                                    uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.addAttachment
 PUT       /update-importation-details                        uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.updateImportDetails
 DELETE    /delete-purchase                                   uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deletePurchase
 POST      /get-sad-reference-count                           uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSadReferenceCount
@@ -25,4 +25,4 @@ GET       /get-attachment-details/:applicationId/:attachmentNumber      uk.gov.h
 POST      /get-all-attachments                                            uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getAllAttachments
 GET       /get-full-attachment-details/:applicationId/:attachmentNumber   uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getFullAttachmentDetails(applicationId: Long, attachmentNumber: Int)
 DELETE    /delete-attachment                                 uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteAttachment
-GET       /:applicationId/get-upload-results                              uk.gov.hmrc.euvatrefunds.controllers.EuVatFileUploadController.getUploadSummary(applicationId: Long)
+GET       /:applicationId/get-upload-results                 uk.gov.hmrc.euvatrefunds.controllers.EuVatFileUploadController.getUploadSummary(applicationId: Long)

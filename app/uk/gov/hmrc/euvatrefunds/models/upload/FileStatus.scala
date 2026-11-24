@@ -18,9 +18,13 @@ package uk.gov.hmrc.euvatrefunds.models.upload
 
 import play.api.libs.json.*
 
-// TODO: further statuses are added in F6.4 - Update Upload Status
 enum FileStatus(val jsonValue: String):
-  case AwaitingUpload extends FileStatus("AWAITING_UPLOAD")
+  case AwaitingUpload     extends FileStatus("AWAITING_UPLOAD")
+  case Verifying          extends FileStatus("VERIFYING")
+  case VerificationFailed extends FileStatus("VERIFICATION_FAILED")
+  case Validating         extends FileStatus("VALIDATING")
+  case Validated          extends FileStatus("VALIDATED")
+  case ValidationFailed   extends FileStatus("VALIDATION_FAILED")
 
 object FileStatus:
 

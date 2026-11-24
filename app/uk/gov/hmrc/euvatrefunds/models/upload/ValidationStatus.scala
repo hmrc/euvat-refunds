@@ -44,7 +44,6 @@ object ValidationStatus:
   ) extends ValidationStatus:
     val fileStatus: FileStatus = FileStatus.AwaitingUpload
 
-  // ttl only works on a bson date, so instants are stored in mongo format
   private given Format[Instant] = MongoJavatimeFormats.instantFormat
 
   private val awaitingUploadFormat: OFormat[AwaitingUpload] = (
@@ -70,6 +69,7 @@ object ValidationStatus:
     override def reads(json: JsValue): JsResult[ValidationStatus] =
       (json \ "fileStatus")
         .validate[FileStatus]
-        .flatMap { case FileStatus.AwaitingUpload =>
-          awaitingUploadFormat.reads(json)
+        .flatMap {
+          case FileStatus.AwaitingUpload => awaitingUploadFormat.reads(json)
+          case other                     => JsError(s"Unsupported file status: ${other.jsonValue}") // TODO: F6.4 adds records for the other statuses
         }
