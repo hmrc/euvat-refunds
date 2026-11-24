@@ -17,6 +17,7 @@
 package uk.gov.hmrc.euvatrefunds.services
 
 import com.typesafe.config.ConfigFactory
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq as mockitoEq}
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
@@ -36,6 +37,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.{Clock, Instant, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.*
 
 class CreateUploadTrackingServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
@@ -87,7 +89,9 @@ class CreateUploadTrackingServiceSpec extends AnyWordSpec with Matchers with Moc
     uploadRequest = UploadRequest(href = "https://upscan.example/upload", fields = Map("key" -> "ref-new"))
   )
 
-  private val expectedRecord = ValidationStatus.AwaitingUpload(
+  // the upload id is a random UUID, so tests take it from the record that was stored
+  private def expectedRecord(uploadId: String) = ValidationStatus.AwaitingUpload(
+    uploadId          = uploadId,
     applicationId     = applicationId,
     reference         = "ref-new",
     uploadUrl         = "https://upscan.example/upload",
@@ -97,7 +101,8 @@ class CreateUploadTrackingServiceSpec extends AnyWordSpec with Matchers with Moc
     updatedAt         = now
   )
 
-  private val expectedResponse = CreateUploadTrackingResponse(
+  private def expectedResponse(uploadId: String) = CreateUploadTrackingResponse(
+    uploadId  = uploadId,
     reference = "ref-new",
     uploadUrl = "https://upscan.example/upload",
     fields    = Map("key" -> "ref-new")
@@ -113,6 +118,19 @@ class CreateUploadTrackingServiceSpec extends AnyWordSpec with Matchers with Moc
   private def applicationExists(): Unit =
     when(candeService.getApplicationDetails(any[Long]())(any()))
       .thenReturn(Future.successful(applicationDetails))
+
+  private def uploadStartsWith(inProgress: Option[ValidationStatus.AwaitingUpload]): Unit = {
+    applicationExists()
+    when(repository.findAwaitingUpload(applicationId)).thenReturn(Future.successful(inProgress))
+    when(upscan.initiate(any())(any())).thenReturn(Future.successful(upscanResponse))
+    when(repository.replaceAwaitingUpload(any(), any())).thenReturn(Future.successful(true))
+  }
+
+  private def storedUploads(): Seq[ValidationStatus.AwaitingUpload] = {
+    val captor = ArgumentCaptor.forClass(classOf[ValidationStatus.AwaitingUpload])
+    verify(repository, atLeastOnce()).replaceAwaitingUpload(captor.capture(), any())
+    captor.getAllValues.asScala.toSeq
+  }
 
   "CreateUploadTrackingService.createUploadTracking" should {
 
@@ -135,53 +153,72 @@ class CreateUploadTrackingServiceSpec extends AnyWordSpec with Matchers with Moc
       verifyNoInteractions(upscan)
     }
 
-    "initiate an upload and store it when the application has no upload" in {
-      applicationExists()
-      when(repository.get(applicationId)).thenReturn(Future.successful(None))
-      when(upscan.initiate(any())(any())).thenReturn(Future.successful(upscanResponse))
-      when(repository.replaceUpload(any(), any())).thenReturn(Future.successful(true))
+    "initiate an upload and store it as a new record when nothing is in progress" in {
+      uploadStartsWith(inProgress = None)
 
-      service.createUploadTracking(applicationId).futureValue shouldBe Right(expectedResponse)
+      val result = service.createUploadTracking(applicationId).futureValue
 
       verify(upscan).initiate(mockitoEq(expectedUpscanRequest))(any())
-      verify(repository).replaceUpload(mockitoEq(expectedRecord), mockitoEq(None))
+      verify(repository).replaceAwaitingUpload(any(), mockitoEq(None))
+      val stored = storedUploads().head
+      stored.uploadId should not be empty
+      stored        shouldBe expectedRecord(stored.uploadId)
+      result        shouldBe Right(expectedResponse(stored.uploadId))
     }
 
-    "replace the existing upload when the application already has one" in {
-      val existing = expectedRecord.copy(reference = "ref-old", fields = Map("key" -> "ref-old"))
+    "replace the upload in progress for the application" in {
+      val inProgress = expectedRecord("upload-old").copy(reference = "ref-old", fields = Map("key" -> "ref-old"))
+      uploadStartsWith(inProgress = Some(inProgress))
 
-      applicationExists()
-      when(repository.get(applicationId)).thenReturn(Future.successful(Some(existing)))
-      when(upscan.initiate(any())(any())).thenReturn(Future.successful(upscanResponse))
-      when(repository.replaceUpload(any(), any())).thenReturn(Future.successful(true))
+      service.createUploadTracking(applicationId).futureValue
 
-      service.createUploadTracking(applicationId).futureValue shouldBe Right(expectedResponse)
-
-      verify(repository).replaceUpload(mockitoEq(expectedRecord), mockitoEq(Some("ref-old")))
+      verify(repository).replaceAwaitingUpload(any(), mockitoEq(Some("ref-old")))
+      storedUploads().head.uploadId should not be "upload-old"
     }
 
-    "return the stored upload when another request stored one first" in {
-      val storedByOther = expectedRecord.copy(reference = "ref-other", fields = Map("key" -> "ref-other"))
+    "create a new upload id every time an upload is initiated" in {
+      uploadStartsWith(inProgress = None)
+
+      service.createUploadTracking(applicationId).futureValue
+      service.createUploadTracking(applicationId).futureValue
+
+      val uploadIds = storedUploads().map(_.uploadId)
+      uploadIds          should have size 2
+      uploadIds.distinct should have size 2
+    }
+
+    "use the redirects passed in instead of the configured ones" in {
+      uploadStartsWith(inProgress = None)
+
+      service.createUploadTracking(applicationId, Some("http://success"), Some("http://error")).futureValue
+
+      verify(upscan).initiate(
+        mockitoEq(expectedUpscanRequest.copy(successRedirect = "http://success", errorRedirect = "http://error"))
+      )(any())
+    }
+
+    "return the upload in progress when another request stored one first" in {
+      val storedByOther = expectedRecord("upload-other").copy(reference = "ref-other", fields = Map("key" -> "ref-other"))
 
       applicationExists()
-      when(repository.get(applicationId))
+      when(repository.findAwaitingUpload(applicationId))
         .thenReturn(Future.successful(None), Future.successful(Some(storedByOther)))
       when(upscan.initiate(any())(any())).thenReturn(Future.successful(upscanResponse))
-      when(repository.replaceUpload(any(), any())).thenReturn(Future.successful(false))
+      when(repository.replaceAwaitingUpload(any(), any())).thenReturn(Future.successful(false))
 
       service.createUploadTracking(applicationId).futureValue shouldBe Right(
-        CreateUploadTrackingResponse("ref-other", "https://upscan.example/upload", Map("key" -> "ref-other"))
+        CreateUploadTrackingResponse("upload-other", "ref-other", "https://upscan.example/upload", Map("key" -> "ref-other"))
       )
     }
 
     "fail and store nothing when upscan fails" in {
       applicationExists()
-      when(repository.get(applicationId)).thenReturn(Future.successful(None))
+      when(repository.findAwaitingUpload(applicationId)).thenReturn(Future.successful(None))
       when(upscan.initiate(any())(any())).thenReturn(Future.failed(UpstreamErrorResponse("Upscan unavailable", 503)))
 
       service.createUploadTracking(applicationId).failed.futureValue shouldBe an[UpstreamErrorResponse]
 
-      verify(repository, never()).replaceUpload(any(), any())
+      verify(repository, never()).replaceAwaitingUpload(any(), any())
     }
   }
 }

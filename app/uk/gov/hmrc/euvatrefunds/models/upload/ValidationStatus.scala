@@ -22,9 +22,8 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 
-// one record per application: tracks the upload currently in progress
-// TODO: further statuses are added in F6.4 - Update Upload Status
 sealed trait ValidationStatus:
+  def uploadId: String
   def applicationId: Long
   def reference: String
   def fileStatus: FileStatus
@@ -34,6 +33,7 @@ sealed trait ValidationStatus:
 object ValidationStatus:
 
   final case class AwaitingUpload(
+    uploadId: String,
     applicationId: Long,
     reference: String,
     uploadUrl: String,
@@ -47,7 +47,8 @@ object ValidationStatus:
   private given Format[Instant] = MongoJavatimeFormats.instantFormat
 
   private val awaitingUploadFormat: OFormat[AwaitingUpload] = (
-    (__ \ "_id").format[Long] and
+    (__ \ "_id").format[String] and
+      (__ \ "applicationId").format[Long] and
       (__ \ "reference").format[String] and
       (__ \ "uploadUrl").format[String] and
       (__ \ "initiateTimestamp").format[Instant] and
@@ -56,7 +57,7 @@ object ValidationStatus:
       (__ \ "updatedAt").format[Instant]
   )(
     AwaitingUpload.apply,
-    s => (s.applicationId, s.reference, s.uploadUrl, s.initiateTimestamp, s.fields, s.createdAt, s.updatedAt)
+    s => (s.uploadId, s.applicationId, s.reference, s.uploadUrl, s.initiateTimestamp, s.fields, s.createdAt, s.updatedAt)
   )
 
   given format: OFormat[ValidationStatus] = new OFormat[ValidationStatus]:

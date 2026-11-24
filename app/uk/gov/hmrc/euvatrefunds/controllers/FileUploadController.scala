@@ -21,14 +21,16 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.services.{CreateUploadTrackingError, CreateUploadTrackingService}
+import uk.gov.hmrc.euvatrefunds.services.{CreateUploadTrackingError, CreateUploadTrackingService, EuVatFileUploadService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
+// all supporting-document upload endpoints; each action uses its own service
 class FileUploadController @Inject() (
   authorise: AuthAction,
   createUploadTrackingService: CreateUploadTrackingService,
+  uploadSummaryService: EuVatFileUploadService,
   val cc: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -43,7 +45,8 @@ class FileUploadController @Inject() (
       createUploadTrackingService
         .createUploadTracking(applicationId, successRedirect, errorRedirect)
         .map {
-          case Right(response) => Created(Json.toJson(response))
+          case Right(response) =>
+            Created(Json.toJson(response))
           case Left(CreateUploadTrackingError.ApplicationNotFound) =>
             logger.warn(s"No application found with id $applicationId")
             NotFound(s"No application found with id $applicationId")
@@ -51,5 +54,23 @@ class FileUploadController @Inject() (
         .recover { case ex: Exception =>
           logger.error(s"Error while creating upload tracking for application $applicationId", ex)
           InternalServerError("Failed to create upload tracking")
+        }
+    }
+
+  def getUploadSummary(applicationId: Long): Action[AnyContent] =
+    authorise.async { _ =>
+      uploadSummaryService
+        .getUploadSummary(applicationId)
+        .map {
+          case Some(summary) =>
+            logger.info(s"Retrieved upload summary for applicationId: $applicationId with ${summary.uploads.size} upload(s)")
+            Ok(Json.toJson(summary))
+          case None =>
+            logger.warn(s"No uploads found for applicationId=$applicationId")
+            NotFound(s"No upload records found for applicationId: $applicationId")
+        }
+        .recover { case ex =>
+          logger.error(s"Error retrieving upload summary for applicationId: $applicationId: ${ex.getMessage}", ex)
+          InternalServerError("Currently experiencing issues with our service")
         }
     }

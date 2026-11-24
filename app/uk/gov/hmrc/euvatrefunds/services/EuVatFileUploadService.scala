@@ -28,13 +28,14 @@ import scala.concurrent.{ExecutionContext, Future}
 class EuVatFileUploadService @Inject() (repository: ValidationStatusRepository)(implicit ec: ExecutionContext) extends Logging {
 
   def getUploadSummary(applicationId: Long): Future[Option[UploadSummaryResponse]] =
-    repository
-      .get(applicationId)
-      .map(_.map(status => UploadSummaryResponse(applicationId, Seq(toSummary(status)))))
+    repository.findAll(applicationId).map {
+      case Nil     => None
+      case uploads => Some(UploadSummaryResponse(applicationId, uploads.map(toSummary)))
+    }
 
   private def toSummary(status: ValidationStatus): UploadSummary =
     status match {
       case upload: ValidationStatus.AwaitingUpload =>
-        UploadSummary(upload.reference, upload.fileStatus, Some(upload.uploadUrl), Some(upload.fields))
+        UploadSummary(upload.uploadId, upload.reference, upload.fileStatus, Some(upload.uploadUrl), Some(upload.fields))
     }
 }

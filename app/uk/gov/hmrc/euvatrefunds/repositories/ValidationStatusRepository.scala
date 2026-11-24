@@ -22,7 +22,7 @@ import org.mongodb.scala.model.Filters.{and, equal}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
-import uk.gov.hmrc.euvatrefunds.models.upload.ValidationStatus
+import uk.gov.hmrc.euvatrefunds.models.upload.{FileStatus, ValidationStatus}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
@@ -30,6 +30,8 @@ import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+// one record per upload (_id = uploadId); an application can have several uploads,
+// but at most one AWAITING_UPLOAD at a time
 @Singleton
 class ValidationStatusRepository @Inject() (
   mongoComponent: MongoComponent,
@@ -43,24 +45,37 @@ class ValidationStatusRepository @Inject() (
       replaceIndexes = appConfig.replaceIndexes
     ):
 
-  def get(applicationId: Long): Future[Option[ValidationStatus]] =
-    collection.find(byApplicationId(applicationId)).headOption()
+  def findAll(applicationId: Long): Future[Seq[ValidationStatus]] =
+    collection.find(byApplicationId(applicationId)).toFuture()
 
-  def replaceUpload(status: ValidationStatus, replacing: Option[String]): Future[Boolean] =
-    replacing match
-      case Some(reference) =>
-        collection
-          .replaceOne(and(byApplicationId(status.applicationId), equal("reference", reference)), status)
-          .toFuture()
-          .map(_.getMatchedCount > 0)
-      case None =>
-        collection
-          .insertOne(status)
-          .toFuture()
-          .map(_ => true)
-          .recover { case e: MongoWriteException if e.getError.getCategory == ErrorCategory.DUPLICATE_KEY => false }
+  def findAwaitingUpload(applicationId: Long): Future[Option[ValidationStatus.AwaitingUpload]] =
+    collection
+      .find(and(byApplicationId(applicationId), awaitingUpload))
+      .headOption()
+      .map(_.collect { case upload: ValidationStatus.AwaitingUpload => upload })
 
-  private def byApplicationId(applicationId: Long) = equal("_id", applicationId)
+  def replaceAwaitingUpload(newUpload: ValidationStatus.AwaitingUpload, replacing: Option[String]): Future[Boolean] =
+    for
+      _        <- replacing.fold(Future.unit)(reference => deleteUpload(newUpload.applicationId, reference))
+      inserted <- insert(newUpload)
+    yield inserted
+
+  private def deleteUpload(applicationId: Long, reference: String): Future[Unit] =
+    collection
+      .deleteOne(and(byApplicationId(applicationId), equal("reference", reference)))
+      .toFuture()
+      .map(_ => ())
+
+  private def insert(upload: ValidationStatus): Future[Boolean] =
+    collection
+      .insertOne(upload)
+      .toFuture()
+      .map(_ => true)
+      .recover { case e: MongoWriteException if e.getError.getCategory == ErrorCategory.DUPLICATE_KEY => false }
+
+  private def byApplicationId(applicationId: Long) = equal("applicationId", applicationId)
+
+  private val awaitingUpload = equal("fileStatus", FileStatus.AwaitingUpload.jsonValue)
 
 object ValidationStatusRepository:
 
@@ -72,5 +87,21 @@ object ValidationStatusRepository:
       indexOptions = IndexOptions()
         .name("updatedAt-ttl-index")
         .expireAfter(ttlInSeconds, TimeUnit.SECONDS)
+    ),
+    IndexModel(
+      keys         = ascending("applicationId"),
+      indexOptions = IndexOptions().name("applicationId-index")
+    ),
+    IndexModel(
+      keys         = ascending("reference"),
+      indexOptions = IndexOptions().name("reference-index").unique(true)
+    ),
+    // stops two requests both storing an in-progress upload for the same application
+    IndexModel(
+      keys = ascending("applicationId"),
+      indexOptions = IndexOptions()
+        .name("applicationId-awaiting-upload-index")
+        .unique(true)
+        .partialFilterExpression(equal("fileStatus", FileStatus.AwaitingUpload.jsonValue))
     )
   )

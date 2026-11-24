@@ -55,7 +55,8 @@ class ValidationStatusRepositorySpec extends AnyWordSpec with Matchers with Opti
   // mongo stores milliseconds, so use a fixed instant to make round trips compare equal
   private val timestamp = Instant.parse("2026-11-12T10:00:00Z")
 
-  private val awaitingUpload = ValidationStatus.AwaitingUpload(
+  private val inProgressUpload = ValidationStatus.AwaitingUpload(
+    uploadId          = "upload-1",
     applicationId     = applicationId,
     reference         = "ref-1",
     uploadUrl         = "https://upscan.example/upload",
@@ -65,7 +66,10 @@ class ValidationStatusRepositorySpec extends AnyWordSpec with Matchers with Opti
     updatedAt         = timestamp
   )
 
-  private val newerUpload = awaitingUpload.copy(reference = "ref-2", fields = Map("key" -> "ref-2"))
+  private val newerUpload = inProgressUpload.copy(uploadId = "upload-2", reference = "ref-2", fields = Map("key" -> "ref-2"))
+
+  private val otherApplicationUpload =
+    inProgressUpload.copy(uploadId = "upload-3", applicationId = 999999L, reference = "ref-3", fields = Map("key" -> "ref-3"))
 
   "the collection" should {
     "be named euvat-validation-status" in {
@@ -79,54 +83,75 @@ class ValidationStatusRepositorySpec extends AnyWordSpec with Matchers with Opti
     }
   }
 
-  "ValidationStatusRepository.get" should {
-    "return nothing when the application has no upload" in {
-      repository.get(applicationId).futureValue shouldBe None
+  "ValidationStatusRepository.findAll" should {
+    "return nothing when the application has no uploads" in {
+      repository.findAll(applicationId).futureValue shouldBe empty
     }
 
-    "return the upload held for the application unchanged" in {
-      insert(awaitingUpload).futureValue
+    // TODO: F6.4 - add a finished upload here once there are statuses other than AWAITING_UPLOAD
+    "return the uploads for the application only" in {
+      insert(inProgressUpload).futureValue
+      insert(otherApplicationUpload).futureValue
 
-      repository.get(applicationId).futureValue shouldBe Some(awaitingUpload)
-    }
-
-    "return nothing for a different application" in {
-      insert(awaitingUpload).futureValue
-
-      repository.get(999999L).futureValue shouldBe None
+      repository.findAll(applicationId).futureValue shouldBe Seq(inProgressUpload)
     }
   }
 
-  "ValidationStatusRepository.replaceUpload" should {
-    "insert when the application has no upload" in {
-      repository.replaceUpload(awaitingUpload, replacing = None).futureValue shouldBe true
-
-      repository.get(applicationId).futureValue shouldBe Some(awaitingUpload)
+  "ValidationStatusRepository.findAwaitingUpload" should {
+    "return nothing when the application has no upload in progress" in {
+      repository.findAwaitingUpload(applicationId).futureValue shouldBe None
     }
 
-    "refuse to insert over an upload stored by another request" in {
-      insert(awaitingUpload).futureValue
+    "return the upload in progress for the application" in {
+      insert(inProgressUpload).futureValue
 
-      repository.replaceUpload(newerUpload, replacing = None).futureValue shouldBe false
-
-      repository.get(applicationId).futureValue shouldBe Some(awaitingUpload)
+      repository.findAwaitingUpload(applicationId).futureValue shouldBe Some(inProgressUpload)
     }
 
-    "replace the upload it was given" in {
-      insert(awaitingUpload).futureValue
+    "not return an upload from another application" in {
+      insert(otherApplicationUpload).futureValue
 
-      repository.replaceUpload(newerUpload, replacing = Some(awaitingUpload.reference)).futureValue shouldBe true
+      repository.findAwaitingUpload(applicationId).futureValue shouldBe None
+    }
+  }
 
-      repository.get(applicationId).futureValue shouldBe Some(newerUpload)
-      count().futureValue                       shouldBe 1
+  "ValidationStatusRepository.replaceAwaitingUpload" should {
+    "store the upload when the application has none in progress" in {
+      repository.replaceAwaitingUpload(inProgressUpload, replacing = None).futureValue shouldBe true
+
+      repository.findAll(applicationId).futureValue shouldBe Seq(inProgressUpload)
     }
 
-    "refuse to replace an upload that has changed" in {
-      insert(awaitingUpload).futureValue
+    "refuse a second upload in progress when another request stored one first" in {
+      insert(inProgressUpload).futureValue
 
-      repository.replaceUpload(newerUpload, replacing = Some("a-stale-reference")).futureValue shouldBe false
+      repository.replaceAwaitingUpload(newerUpload, replacing = None).futureValue shouldBe false
 
-      repository.get(applicationId).futureValue shouldBe Some(awaitingUpload)
+      repository.findAll(applicationId).futureValue shouldBe Seq(inProgressUpload)
+    }
+
+    "replace the upload in progress it was given" in {
+      insert(inProgressUpload).futureValue
+
+      repository.replaceAwaitingUpload(newerUpload, replacing = Some(inProgressUpload.reference)).futureValue shouldBe true
+
+      repository.findAll(applicationId).futureValue shouldBe Seq(newerUpload)
+    }
+
+    "refuse to replace when the upload in progress has changed" in {
+      insert(inProgressUpload).futureValue
+
+      repository.replaceAwaitingUpload(newerUpload, replacing = Some("a-stale-reference")).futureValue shouldBe false
+
+      repository.findAll(applicationId).futureValue shouldBe Seq(inProgressUpload)
+    }
+
+    "leave other applications' uploads alone" in {
+      insert(otherApplicationUpload).futureValue
+
+      repository.replaceAwaitingUpload(inProgressUpload, replacing = None).futureValue shouldBe true
+
+      repository.findAll(999999L).futureValue shouldBe Seq(otherApplicationUpload)
     }
   }
 }

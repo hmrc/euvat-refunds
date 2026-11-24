@@ -28,9 +28,11 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
+import uk.gov.hmrc.euvatrefunds.models.UploadSummary
 import uk.gov.hmrc.euvatrefunds.models.requests.AuthenticatedRequest
-import uk.gov.hmrc.euvatrefunds.models.responses.CreateUploadTrackingResponse
-import uk.gov.hmrc.euvatrefunds.services.{CreateUploadTrackingError, CreateUploadTrackingService}
+import uk.gov.hmrc.euvatrefunds.models.responses.{CreateUploadTrackingResponse, UploadSummaryResponse}
+import uk.gov.hmrc.euvatrefunds.models.upload.FileStatus
+import uk.gov.hmrc.euvatrefunds.services.{CreateUploadTrackingError, CreateUploadTrackingService, EuVatFileUploadService}
 import uk.gov.hmrc.http.SessionId
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +41,8 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
-  private val service = mock[CreateUploadTrackingService]
+  private val createUploadTrackingService = mock[CreateUploadTrackingService]
+  private val uploadSummaryService = mock[EuVatFileUploadService]
 
   private val authAction: AuthAction = new AuthAction {
     override def parser: BodyParser[AnyContent] = stubControllerComponents().parsers.defaultBodyParser
@@ -60,11 +63,12 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
   }
 
   private val controller =
-    new FileUploadController(authAction, service, stubControllerComponents())
+    new FileUploadController(authAction, createUploadTrackingService, uploadSummaryService, stubControllerComponents())
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(service)
+    reset(createUploadTrackingService)
+    reset(uploadSummaryService)
   }
 
   "FileUploadController.createUploadTracking" should {
@@ -73,13 +77,14 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     val request = FakeRequest(POST, s"/$applicationId/create-upload-tracking")
 
     val response = CreateUploadTrackingResponse(
+      uploadId  = "upload-123",
       reference = "ref-123",
       uploadUrl = "https://upscan.example/upload",
       fields    = Map("key" -> "ref-123")
     )
 
     "return 201 with the upload details when tracking is created" in {
-      when(service.createUploadTracking(any[Long](), any(), any())(any()))
+      when(createUploadTrackingService.createUploadTracking(any[Long](), any(), any())(any()))
         .thenReturn(Future.successful(Right(response)))
 
       val result = controller.createUploadTracking(applicationId, None, None)(request)
@@ -89,7 +94,7 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
 
     "return 404 when the application does not exist" in {
-      when(service.createUploadTracking(any[Long](), any(), any())(any()))
+      when(createUploadTrackingService.createUploadTracking(any[Long](), any(), any())(any()))
         .thenReturn(Future.successful(Left(CreateUploadTrackingError.ApplicationNotFound)))
 
       val result = controller.createUploadTracking(applicationId, None, None)(request)
@@ -99,7 +104,7 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
 
     "return 500 when the service fails" in {
-      when(service.createUploadTracking(any[Long](), any(), any())(any()))
+      when(createUploadTrackingService.createUploadTracking(any[Long](), any(), any())(any()))
         .thenReturn(Future.failed(new RuntimeException("Upscan unavailable")))
 
       val result = controller.createUploadTracking(applicationId, None, None)(request)
@@ -109,7 +114,7 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
 
     "pass the redirect URLs to the service" in {
-      when(service.createUploadTracking(any[Long](), any(), any())(any()))
+      when(createUploadTrackingService.createUploadTracking(any[Long](), any(), any())(any()))
         .thenReturn(Future.successful(Right(response)))
 
       val result = controller.createUploadTracking(
@@ -119,11 +124,58 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       )(request)
 
       status(result) shouldBe CREATED
-      verify(service).createUploadTracking(
+      verify(createUploadTrackingService).createUploadTracking(
         mockitoEq(applicationId),
         mockitoEq(Some("http://success")),
         mockitoEq(Some("http://error"))
       )(any())
+    }
+  }
+
+  "FileUploadController.getUploadSummary" should {
+
+    val applicationId = 1234L
+    val request = FakeRequest(GET, s"/$applicationId/get-upload-results")
+
+    val uploadsResponse = UploadSummaryResponse(
+      applicationId = applicationId,
+      uploads = Seq(
+        UploadSummary(
+          uploadId   = "upload-1",
+          reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
+          fileStatus = FileStatus.AwaitingUpload,
+          uploadUrl  = Some("https://xxxx/upscan-upload-proxy/bucketName"),
+          fields     = Some(Map("acl" -> "private", "x-amz-signature" -> "xxxx"))
+        )
+      )
+    )
+
+    "return 200 with the upload summary" in {
+      when(uploadSummaryService.getUploadSummary(mockitoEq(applicationId)))
+        .thenReturn(Future.successful(Some(uploadsResponse)))
+
+      val result = controller.getUploadSummary(applicationId)(request)
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(uploadsResponse)
+    }
+
+    "return 404 when the application has no uploads" in {
+      when(uploadSummaryService.getUploadSummary(any())).thenReturn(Future.successful(None))
+
+      val result = controller.getUploadSummary(applicationId)(request)
+
+      status(result)        shouldBe NOT_FOUND
+      contentAsString(result) should include(s"No upload records found for applicationId: $applicationId")
+    }
+
+    "return 500 when the service fails" in {
+      when(uploadSummaryService.getUploadSummary(any())).thenReturn(Future.failed(new RuntimeException("Service error")))
+
+      val result = controller.getUploadSummary(applicationId)(request)
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Currently experiencing issues with our service")
     }
   }
 }

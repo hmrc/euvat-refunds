@@ -20,6 +20,7 @@ import play.api.libs.json.*
 import uk.gov.hmrc.euvatrefunds.models.upload.FileStatus
 
 final case class UploadSummary(
+  uploadId: String,
   reference: String,
   fileStatus: FileStatus,
   uploadUrl: Option[String] = None,
@@ -30,6 +31,7 @@ object UploadSummary {
 
   implicit val writes: OWrites[UploadSummary] = (uploadSummary: UploadSummary) => {
     val mandatoryFields = Json.obj(
+      "uploadId"   -> uploadSummary.uploadId,
       "reference"  -> uploadSummary.reference,
       "fileStatus" -> uploadSummary.fileStatus
     )

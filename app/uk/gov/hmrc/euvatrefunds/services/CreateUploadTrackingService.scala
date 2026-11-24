@@ -25,6 +25,7 @@ import uk.gov.hmrc.euvatrefunds.repositories.ValidationStatusRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.{Clock, Instant}
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,7 +53,6 @@ class CreateUploadTrackingService @Inject() (
       case true  => startUpload(applicationId, successRedirect, errorRedirect).map(Right(_))
     }
 
-  // assumes an unknown application comes back as a 404 from rds-cande-proxy
   private def applicationExists(applicationId: Long)(implicit hc: HeaderCarrier): Future[Boolean] =
     candeService
       .getApplicationDetails(applicationId)
@@ -63,27 +63,19 @@ class CreateUploadTrackingService @Inject() (
     hc: HeaderCarrier
   ): Future[CreateUploadTrackingResponse] =
     for
-      existing <- repository.get(applicationId)
+      inProgress <- repository.findAwaitingUpload(applicationId)
       initiatedAt = clock.instant()
       upscanResponse <- upscan.initiate(initiateRequest(applicationId, successRedirect, errorRedirect))
-      status = awaitingUpload(applicationId, upscanResponse, initiatedAt)
-      stored   <- repository.replaceUpload(status, existing.map(_.reference))
-      response <- if stored then Future.successful(CreateUploadTrackingResponse.from(status)) else uploadStoredByAnotherRequest(applicationId, status)
+      newUpload = awaitingUpload(applicationId, upscanResponse, initiatedAt)
+      isStored <- repository.replaceAwaitingUpload(newUpload, inProgress.map(_.reference))
+      response <- if isStored then Future.successful(CreateUploadTrackingResponse.from(newUpload))
+                  else
+                    repository
+                      .findAwaitingUpload(applicationId)
+                      .map(currentFile => CreateUploadTrackingResponse.from(currentFile.getOrElse(newUpload)))
     yield response
 
-  private def uploadStoredByAnotherRequest(applicationId: Long,
-                                           newUploadStatus: ValidationStatus.AwaitingUpload
-                                          ): Future[CreateUploadTrackingResponse] =
-    repository.get(applicationId).map {
-      case Some(stored: ValidationStatus.AwaitingUpload) => CreateUploadTrackingResponse.from(stored)
-      case _                                             => CreateUploadTrackingResponse.from(newUploadStatus)
-    }
-
-  private def initiateRequest(
-    applicationId: Long,
-    successRedirect: Option[String],
-    errorRedirect: Option[String]
-  ): UpscanInitiateRequest =
+  private def initiateRequest(applicationId: Long, successRedirect: Option[String], errorRedirect: Option[String]): UpscanInitiateRequest =
     UpscanInitiateRequest(
       callbackUrl     = s"${appConfig.upscanCallbackBaseUrl}/$applicationId/upscan-callback",
       successRedirect = successRedirect.getOrElse(appConfig.upscanSuccessRedirect),
@@ -94,6 +86,7 @@ class CreateUploadTrackingService @Inject() (
 
   private def awaitingUpload(applicationId: Long, upscanResponse: UpscanInitiateResponse, initiatedAt: Instant): ValidationStatus.AwaitingUpload =
     ValidationStatus.AwaitingUpload(
+      uploadId          = newUploadId(),
       applicationId     = applicationId,
       reference         = upscanResponse.reference,
       uploadUrl         = upscanResponse.uploadRequest.href,
@@ -102,3 +95,6 @@ class CreateUploadTrackingService @Inject() (
       createdAt         = initiatedAt,
       updatedAt         = initiatedAt
     )
+
+  // every initiate creates a new upload record with its own id
+  private def newUploadId(): String = UUID.randomUUID().toString

@@ -27,6 +27,7 @@ class ValidationStatusSpec extends AnyWordSpec with Matchers {
   private val timestamp = Instant.parse("2026-11-12T10:00:00Z")
 
   private val awaitingUpload: ValidationStatus = ValidationStatus.AwaitingUpload(
+    uploadId          = "upload-1",
     applicationId     = 133L,
     reference         = "ref-1",
     uploadUrl         = "https://upscan.example/upload",
@@ -39,8 +40,12 @@ class ValidationStatusSpec extends AnyWordSpec with Matchers {
   private val json: JsObject = Json.toJson(awaitingUpload).as[JsObject]
 
   "ValidationStatus format" should {
-    "store the application id as the mongo _id" in {
-      (json \ "_id").as[Long] shouldBe 133L
+    "store the upload id as the mongo _id" in {
+      (json \ "_id").as[String] shouldBe "upload-1"
+    }
+
+    "store the application id as its own field" in {
+      (json \ "applicationId").as[Long] shouldBe 133L
     }
 
     "write the file status" in {
@@ -57,6 +62,10 @@ class ValidationStatusSpec extends AnyWordSpec with Matchers {
 
     "fail to read when the file status is unknown" in {
       (json + ("fileStatus" -> JsString("NOT_A_STATUS"))).validate[ValidationStatus] shouldBe a[JsError]
+    }
+
+    "fail to read a status that has no record type yet" in {
+      (json + ("fileStatus" -> JsString("VALIDATED"))).validate[ValidationStatus] shouldBe a[JsError]
     }
   }
 }

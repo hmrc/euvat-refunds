@@ -50,6 +50,7 @@ class EuVatFileUploadServiceSpec extends AnyWordSpec with Matchers with MockitoS
     val timestamp = Instant.parse("2026-11-24T10:00:00Z")
 
     val storedUpload = ValidationStatus.AwaitingUpload(
+      uploadId          = "upload-1",
       applicationId     = applicationId,
       reference         = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
       uploadUrl         = "https://xxxx/upscan-upload-proxy/bucketName",
@@ -59,36 +60,36 @@ class EuVatFileUploadServiceSpec extends AnyWordSpec with Matchers with MockitoS
       updatedAt         = timestamp
     )
 
-    "return the stored upload as a summary with its upload url and fields" in {
-      when(mockRepository.get(mockitoEq(applicationId)))
-        .thenReturn(Future.successful(Some(storedUpload)))
+    val expectedSummary = UploadSummary(
+      uploadId   = "upload-1",
+      reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
+      fileStatus = FileStatus.AwaitingUpload,
+      uploadUrl  = Some("https://xxxx/upscan-upload-proxy/bucketName"),
+      fields     = Some(Map("acl" -> "private", "x-amz-signature" -> "xxxx"))
+    )
 
-      val result = service.getUploadSummary(applicationId).futureValue
+    "return every upload for the application as a summary" in {
+      val secondUpload = storedUpload.copy(uploadId = "upload-2", reference = "ref-2")
+      when(mockRepository.findAll(mockitoEq(applicationId)))
+        .thenReturn(Future.successful(Seq(storedUpload, secondUpload)))
 
-      result shouldBe Some(
+      service.getUploadSummary(applicationId).futureValue shouldBe Some(
         UploadSummaryResponse(
           applicationId = applicationId,
-          uploads = Seq(
-            UploadSummary(
-              reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
-              fileStatus = FileStatus.AwaitingUpload,
-              uploadUrl  = Some("https://xxxx/upscan-upload-proxy/bucketName"),
-              fields     = Some(Map("acl" -> "private", "x-amz-signature" -> "xxxx"))
-            )
-          )
+          uploads       = Seq(expectedSummary, expectedSummary.copy(uploadId = "upload-2", reference = "ref-2"))
         )
       )
     }
 
-    "return None when there is no upload for the application" in {
-      when(mockRepository.get(mockitoEq(applicationId)))
-        .thenReturn(Future.successful(None))
+    "return None when the application has no uploads" in {
+      when(mockRepository.findAll(mockitoEq(applicationId)))
+        .thenReturn(Future.successful(Seq.empty))
 
       service.getUploadSummary(applicationId).futureValue shouldBe None
     }
 
     "propagate an error from the repository" in {
-      when(mockRepository.get(mockitoEq(applicationId)))
+      when(mockRepository.findAll(mockitoEq(applicationId)))
         .thenReturn(Future.failed(new RuntimeException("Repository error")))
 
       service.getUploadSummary(applicationId).failed.futureValue.getMessage shouldBe "Repository error"
