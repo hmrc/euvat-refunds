@@ -152,6 +152,14 @@ class EuVatCandeService @Inject() (
     }
   }
 
+  def getAllAttachments(request: GetAllAttachmentsRequest)(implicit hc: HeaderCarrier): Future[GetAllAttachmentsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getAllAttachments(request)
+    } else {
+      rdsCandeProxyConnector.getAllAttachments(request)
+    }
+  }
+
   def deletePurchase(request: DeletePurchaseRequest)(implicit hc: HeaderCarrier): Future[DeletePurchaseResponse] = {
     if (candeStubbed) {
       euVatStubsConnector.deletePurchase(request)
@@ -199,6 +207,14 @@ class EuVatCandeService @Inject() (
       euVatStubsConnector.getAttachmentDetails(request)
     } else {
       rdsCandeProxyConnector.getAttachmentDetails(request)
+    }
+  }
+
+  def getFullAttachmentDetails(request: GetFullAttachmentDetailsRequest)(implicit hc: HeaderCarrier): Future[GetFullAttachmentDetailsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getFullAttachmentDetails(request)
+    } else {
+      rdsCandeProxyConnector.getFullAttachmentDetails(request)
     }
   }
 

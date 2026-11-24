@@ -109,6 +109,12 @@ class RdsCandeProxyConnector @Inject() (
       .withBody(Json.toJson(request))
       .execute[PurchaseImportListResponse]
 
+  def getAllAttachments(request: GetAllAttachmentsRequest)(implicit hc: HeaderCarrier): Future[GetAllAttachmentsResponse] =
+    http
+      .post(url"$baseUrl/euvat/get-all-attachments")
+      .withBody(Json.toJson(request))
+      .execute[GetAllAttachmentsResponse]
+
   def deleteApplication(
     request: DeleteApplicationRequest
   )(implicit hc: HeaderCarrier): Future[HttpResponse] =
@@ -158,6 +164,11 @@ class RdsCandeProxyConnector @Inject() (
     http
       .get(url"$baseUrl/euvat/get-attachment-details/${request.applicationId}/${request.attachmentNumber}")
       .execute[GetAttachmentDetailsResponse]
+
+  def getFullAttachmentDetails(request: GetFullAttachmentDetailsRequest)(implicit hc: HeaderCarrier): Future[GetFullAttachmentDetailsResponse] =
+    http
+      .get(url"$baseUrl/euvat/get-full-attachment-details/${request.applicationId}/${request.attachmentNumber}")
+      .execute[GetFullAttachmentDetailsResponse]
 
   def deleteAttachment(request: DeleteAttachmentRequest)(implicit hc: HeaderCarrier): Future[DeleteAttachmentResponse] =
     http

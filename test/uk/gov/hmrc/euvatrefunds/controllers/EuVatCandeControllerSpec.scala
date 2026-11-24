@@ -28,6 +28,7 @@ import play.api.mvc.{AnyContent, BodyParser, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
+import uk.gov.hmrc.euvatrefunds.models.Attachment
 import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.euvatrefunds.services.EuVatCandeService
@@ -939,6 +940,72 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.getFullAttachmentDetails" should {
+    val response = GetFullAttachmentDetailsResponse(
+      attachmentNumber     = 11,
+      fileName             = Some("test.pdf"),
+      fileType             = Some("pdf"),
+      fileDescription      = Some("pdf file attached"),
+      fileSize             = Some(42),
+      fileContent          = Some("dGVzdCBmaWxlIGNvbnRlbnQ="),
+      updateSequenceNumber = 10
+    )
+
+    "return 200 with JSON when service returns the attachment details" in {
+
+      when(service.getFullAttachmentDetails(any())(any())).thenReturn(Future.successful(response))
+
+      val result = controller.getFullAttachmentDetails(123456L, 4)(FakeRequest(GET, s"/get-full-attachment-details/123456/4"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return 500 when service fails" in {
+      when(service.getFullAttachmentDetails(any())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getFullAttachmentDetails(123456L, 4)(FakeRequest(GET, s"/get-full-attachment-details/123456/4"))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return 500 when the proxy call fails with an UpstreamErrorResponse" in {
+      when(service.getFullAttachmentDetails(any())(any()))
+        .thenReturn(Future.failed(UpstreamErrorResponse("No attachment record", 500)))
+
+      val result = controller.getFullAttachmentDetails(123456L, 4)(FakeRequest(GET, "/get-full-attachment-details/123456/4"))
+
+      status(result)          shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "Failed to retrieve full attachment details"
+    }
+  }
+
+  "EuVatCandeController.getAllAttachments" should {
+    val request = GetAllAttachmentsRequest(applicationId = 123456)
+    val response = GetAllAttachmentsResponse(
+      attachments      = List(Attachment(1, Some("hotel-invoice.pdf"), Some("pdf"), Some("Hotel invoice"), Some(1825))),
+      totalAttachments = 1
+    )
+
+    "return 200 with JSON when service returns attachments" in {
+      when(service.getAllAttachments(any())(any())).thenReturn(Future.successful(response))
+
+      val result = controller.getAllAttachments()(
+        FakeRequest(POST, "/get-all-attachments").withJsonBody(Json.toJson(request))
+      )
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return 400 when request body is invalid" in {
+      val result = controller.getAllAttachments()(
+        FakeRequest(POST, "/get-all-attachments").withJsonBody(Json.obj("invalid" -> "body"))
+      )
+      status(result) shouldBe BAD_REQUEST
+    }
+  }
+
   "EuVatCandeController.deleteAttachment" should {
 
     val deleteRequest = DeleteAttachmentRequest(applicationId = 123456, attachmentNumber = 4, updateSequenceNumber = 7)
@@ -965,6 +1032,17 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
       )
 
       status(result) shouldBe BAD_REQUEST
+    }
+
+    "return 500 when service fails" in {
+      when(service.getAllAttachments(any())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getAllAttachments()(
+        FakeRequest(POST, "/get-all-attachments").withJsonBody(Json.toJson(deleteRequest))
+      )
+
+      status(result)        shouldBe INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("Failed to retrieve attachments")
     }
 
     "return 500 and log error when DB call fails" in {

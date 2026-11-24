@@ -247,6 +247,23 @@ class EuVatCandeController @Inject() (
       }
     }
 
+  def getAllAttachments: Action[AnyContent] =
+    authorise.async { implicit request =>
+      request.body.asJson.flatMap(_.asOpt[GetAllAttachmentsRequest]) match {
+        case None =>
+          logger.warn("Invalid JSON for GetAllAttachmentsRequest")
+          Future.successful(BadRequest("Invalid request body"))
+        case Some(getAllAttachmentsRequest) =>
+          service
+            .getAllAttachments(getAllAttachmentsRequest)
+            .map(response => Ok(Json.toJson(response)))
+            .recover { case e: Exception =>
+              logger.error("Error retrieving all attachments", e)
+              InternalServerError("Failed to retrieve attachments")
+            }
+      }
+    }
+
   def deleteApplication: Action[AnyContent] =
     authorise.async { implicit request =>
       request.body.asJson.flatMap(_.asOpt[DeleteApplicationRequest]) match {
@@ -387,6 +404,22 @@ class EuVatCandeController @Inject() (
         .recover { case ex: Exception =>
           logger.error("Error while retrieving attachment details", ex)
           InternalServerError("Failed to retrieve attachment details")
+        }
+    }
+
+  def getFullAttachmentDetails(applicationId: Long, attachmentNumber: Int): Action[AnyContent] =
+
+    val fullDetailsRequest = GetFullAttachmentDetailsRequest(applicationId = applicationId, attachmentNumber = attachmentNumber)
+
+    authorise.async { implicit request =>
+      service
+        .getFullAttachmentDetails(fullDetailsRequest)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving full attachment details", ex)
+          InternalServerError("Failed to retrieve full attachment details")
         }
     }
 

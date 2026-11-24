@@ -25,6 +25,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Configuration
 import uk.gov.hmrc.euvatrefunds.connectors.{EuVatStubsConnector, RdsCandeProxyConnector}
+import uk.gov.hmrc.euvatrefunds.models.Attachment
 import uk.gov.hmrc.euvatrefunds.models.requests.*
 import uk.gov.hmrc.euvatrefunds.models.responses.*
 import uk.gov.hmrc.http.HeaderCarrier
@@ -1317,6 +1318,136 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
         .thenReturn(Future.failed(failure))
 
       val result = service.getAttachmentDetails(request)
+
+      whenReady(result.failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
+
+  "EuVatCandeService.getAllAttachments" should {
+    val request = GetAllAttachmentsRequest(applicationId = 123456L)
+
+    val sampleResponse = GetAllAttachmentsResponse(
+      attachments      = List(Attachment(1, Some("hotel-invoice.pdf"), Some("pdf"), Some("Hotel invoice"), Some(1825))),
+      totalAttachments = 1
+    )
+
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getAllAttachments(any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = service.getAllAttachments(request).futureValue
+
+      result shouldBe sampleResponse
+      verify(mockCandeConnector, times(1)).getAllAttachments(any())(any())
+    }
+
+    "return the response from the stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getAllAttachments(any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = service.getAllAttachments(request).futureValue
+
+      result shouldBe sampleResponse
+      verify(mockStubsConnector, times(1)).getAllAttachments(any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getAllAttachments(any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      whenReady(service.getAllAttachments(request).failed) { ex =>
+        ex shouldBe failure
+      }
+    }
+  }
+
+  "EuVatCandeService.getFullAttachmentDetails" should {
+    val request = GetFullAttachmentDetailsRequest(
+      applicationId    = 123456L,
+      attachmentNumber = 4
+    )
+
+    val sampleResponse = GetFullAttachmentDetailsResponse(
+      attachmentNumber     = 11,
+      fileName             = Some("test.pdf"),
+      fileType             = Some("pdf"),
+      fileDescription      = Some("pdf file attached"),
+      fileSize             = Some(42),
+      fileContent          = Some("dGVzdCBmaWxlIGNvbnRlbnQ="),
+      updateSequenceNumber = 10
+    )
+
+    "return the response from the rds cande connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getFullAttachmentDetails(any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = service.getFullAttachmentDetails(request).futureValue
+
+      result shouldBe sampleResponse
+      verify(mockCandeConnector, times(1)).getFullAttachmentDetails(any())(any())
+    }
+
+    "return the response from the stubs connector" in {
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getFullAttachmentDetails(any())(any()))
+        .thenReturn(Future.successful(sampleResponse))
+
+      val result = service.getFullAttachmentDetails(request).futureValue
+
+      result shouldBe sampleResponse
+      verify(mockStubsConnector, times(1)).getFullAttachmentDetails(any())(any())
+    }
+
+    "propagate an exception from the connector" in {
+      val failure = new RuntimeException("Connector failed")
+      lazy val configuration: Configuration =
+        Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+
+      val mockCandeConnector: RdsCandeProxyConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector: EuVatStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getFullAttachmentDetails(any())(any()))
+        .thenReturn(Future.failed(failure))
+
+      val result = service.getFullAttachmentDetails(request)
 
       whenReady(result.failed) { ex =>
         ex shouldBe failure
