@@ -124,7 +124,7 @@ class EuVatStubsConnector @Inject() (
 
   def getAllAttachments(request: GetAllAttachmentsRequest)(implicit hc: HeaderCarrier): Future[GetAllAttachmentsResponse] =
     http
-      .post(url"$baseUrl/euvat/get-all-attachments")
+      .post(url"$baseUrl/get-all-attachments")
       .withBody(Json.toJson(request))
       .execute[GetAllAttachmentsResponse]
 

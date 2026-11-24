@@ -717,7 +717,7 @@ class EuVatStubsConnectorSpec
 
     "return the attachments when euvat-stubs returns 200" in {
       stubFor(
-        post(urlEqualTo("/euvat-stubs/euvat/get-all-attachments"))
+        post(urlEqualTo("/euvat-stubs/get-all-attachments"))
           .willReturn(aResponse().withStatus(200).withBody(Json.toJson(attachmentsResponse).toString))
       )
 
@@ -726,7 +726,7 @@ class EuVatStubsConnectorSpec
 
     "return error when euvat-stubs returns 500" in {
       stubFor(
-        post(urlEqualTo("/euvat-stubs/euvat/get-all-attachments"))
+        post(urlEqualTo("/euvat-stubs/get-all-attachments"))
           .willReturn(aResponse().withStatus(500))
       )
 
