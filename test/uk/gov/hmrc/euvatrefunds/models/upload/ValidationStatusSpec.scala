@@ -1,0 +1,71 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.euvatrefunds.models.upload
+
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.{JsError, JsObject, JsString, JsSuccess, Json}
+
+import java.time.Instant
+
+class ValidationStatusSpec extends AnyWordSpec with Matchers {
+
+  private val timestamp = Instant.parse("2026-11-12T10:00:00Z")
+
+  private val awaitingUpload: ValidationStatus = ValidationStatus.AwaitingUpload(
+    uploadId          = "upload-1",
+    applicationId     = 133L,
+    reference         = "ref-1",
+    uploadUrl         = "https://upscan.example/upload",
+    initiateTimestamp = timestamp,
+    fields            = Map("key" -> "ref-1"),
+    createdAt         = timestamp,
+    updatedAt         = timestamp
+  )
+
+  private val json: JsObject = Json.toJson(awaitingUpload).as[JsObject]
+
+  "ValidationStatus format" should {
+    "store the upload id as the mongo _id" in {
+      (json \ "_id").as[String] shouldBe "upload-1"
+    }
+
+    "store the application id as its own field" in {
+      (json \ "applicationId").as[Long] shouldBe 133L
+    }
+
+    "write the file status" in {
+      (json \ "fileStatus").as[String] shouldBe "AWAITING_UPLOAD"
+    }
+
+    "read back what it wrote" in {
+      json.validate[ValidationStatus] shouldBe JsSuccess(awaitingUpload)
+    }
+
+    "fail to read when the file status is missing" in {
+      (json - "fileStatus").validate[ValidationStatus] shouldBe a[JsError]
+    }
+
+    "fail to read when the file status is unknown" in {
+      (json + ("fileStatus" -> JsString("NOT_A_STATUS"))).validate[ValidationStatus] shouldBe a[JsError]
+    }
+
+    "fail to read a status that has no record type yet" in {
+      (json + ("fileStatus" -> JsString("VALIDATED"))).validate[ValidationStatus] shouldBe a[JsError]
+    }
+  }
+}

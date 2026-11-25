@@ -16,23 +16,46 @@
 
 package uk.gov.hmrc.euvatrefunds.controllers
 
+import com.google.inject.Inject
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.services.EuVatFileUploadService
+import uk.gov.hmrc.euvatrefunds.services.{CreateUploadTrackingError, CreateUploadTrackingService, EuVatFileUploadService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class EuVatFileUploadController @Inject() (
+// all supporting-document upload endpoints; each action uses its own service
+class FileUploadController @Inject() (
   authorise: AuthAction,
+  createUploadTrackingService: CreateUploadTrackingService,
   uploadSummaryService: EuVatFileUploadService,
   val cc: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
-    with Logging {
+    with Logging:
+
+  def createUploadTracking(
+    applicationId: Long,
+    successRedirect: Option[String],
+    errorRedirect: Option[String]
+  ): Action[AnyContent] =
+    authorise.async { implicit request =>
+      createUploadTrackingService
+        .createUploadTracking(applicationId, successRedirect, errorRedirect)
+        .map {
+          case Right(response) =>
+            Created(Json.toJson(response))
+          case Left(CreateUploadTrackingError.ApplicationNotFound) =>
+            logger.warn(s"No application found with id $applicationId")
+            NotFound(s"No application found with id $applicationId")
+        }
+        .recover { case ex: Exception =>
+          logger.error(s"Error while creating upload tracking for application $applicationId", ex)
+          InternalServerError("Failed to create upload tracking")
+        }
+    }
 
   def getUploadSummary(applicationId: Long): Action[AnyContent] =
     authorise.async { _ =>
@@ -51,5 +74,3 @@ class EuVatFileUploadController @Inject() (
           InternalServerError("Currently experiencing issues with our service")
         }
     }
-
-}

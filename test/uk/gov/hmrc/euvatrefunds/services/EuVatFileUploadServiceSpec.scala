@@ -16,79 +16,83 @@
 
 package uk.gov.hmrc.euvatrefunds.services
 
-import org.mockito.ArgumentMatchers.{any, eq as mockitoEq}
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchers.eq as mockitoEq
+import org.mockito.Mockito.{reset, when}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.euvatrefunds.models.UploadSummary
 import uk.gov.hmrc.euvatrefunds.models.responses.UploadSummaryResponse
-import uk.gov.hmrc.euvatrefunds.models.{FileStatus, UploadSummary}
-import uk.gov.hmrc.euvatrefunds.repositories.EuVatFileUploadRepository
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.euvatrefunds.models.upload.{FileStatus, ValidationStatus}
+import uk.gov.hmrc.euvatrefunds.repositories.ValidationStatusRepository
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
-class EuVatFileUploadServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
+class EuVatFileUploadServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
-  implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  private val mockRepository = mock[EuVatFileUploadRepository]
+  private val mockRepository = mock[ValidationStatusRepository]
 
   private val service = new EuVatFileUploadService(mockRepository)
 
-  "EuVatFileUploadServiceS.getUploadSummary" should {
-
-    val applicationId = 1234L
-    val emptyUploadsResponse = UploadSummaryResponse(applicationId = applicationId, uploads = Nil)
-    val uploadsResponse = emptyUploadsResponse.copy(
-      uploads = Seq(
-        UploadSummary(
-          reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
-          fileStatus = FileStatus.AWAITING_UPLOAD,
-          uploadUrl  = Option("https://xxxx/upscan-upload-proxy/bucketName"),
-          fields     = Option(Map("acl" -> "private", "x-amz-signature" -> "xxxx", "x-amz-date" -> "yyyyMMddThhmmssZ"))
-        )
-      )
-    )
-
-    "return uploads response when repository returns one" in {
-      when(mockRepository.getUploadSummary(mockitoEq(applicationId))(any[ExecutionContext]()))
-        .thenReturn(Future.successful(Option(uploadsResponse)))
-
-      val result = service.getUploadSummary(applicationId).futureValue
-
-      result shouldBe Option(uploadsResponse)
-    }
-
-    "return empty uploads response when repository returns empty uploads" in {
-      when(mockRepository.getUploadSummary(mockitoEq(applicationId))(any[ExecutionContext]()))
-        .thenReturn(Future.successful(Option(emptyUploadsResponse)))
-
-      val result = service.getUploadSummary(applicationId).futureValue
-
-      result shouldBe Option(emptyUploadsResponse)
-    }
-
-    "return None response when repository returns None" in {
-      when(mockRepository.getUploadSummary(mockitoEq(applicationId))(any[ExecutionContext]()))
-        .thenReturn(Future.successful(None))
-
-      val result = service.getUploadSummary(applicationId).futureValue
-
-      result shouldBe None
-    }
-
-    "propagate error from repository" in {
-      val errorMessage = "Repository error"
-      when(mockRepository.getUploadSummary(mockitoEq(applicationId))(any[ExecutionContext]()))
-        .thenReturn(Future.failed(Exception(errorMessage)))
-
-      val result = service.getUploadSummary(applicationId).failed.futureValue
-
-      result.getMessage shouldBe errorMessage
-    }
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockRepository)
   }
 
+  "EuVatFileUploadService.getUploadSummary" should {
+
+    val applicationId = 1234L
+    val timestamp = Instant.parse("2026-11-24T10:00:00Z")
+
+    val storedUpload = ValidationStatus.AwaitingUpload(
+      uploadId          = "upload-1",
+      applicationId     = applicationId,
+      reference         = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
+      uploadUrl         = "https://xxxx/upscan-upload-proxy/bucketName",
+      initiateTimestamp = timestamp,
+      fields            = Map("acl" -> "private", "x-amz-signature" -> "xxxx"),
+      createdAt         = timestamp,
+      updatedAt         = timestamp
+    )
+
+    val expectedSummary = UploadSummary(
+      uploadId   = "upload-1",
+      reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
+      fileStatus = FileStatus.AwaitingUpload,
+      uploadUrl  = Some("https://xxxx/upscan-upload-proxy/bucketName"),
+      fields     = Some(Map("acl" -> "private", "x-amz-signature" -> "xxxx"))
+    )
+
+    "return every upload for the application as a summary" in {
+      val secondUpload = storedUpload.copy(uploadId = "upload-2", reference = "ref-2")
+      when(mockRepository.findAll(mockitoEq(applicationId)))
+        .thenReturn(Future.successful(Seq(storedUpload, secondUpload)))
+
+      service.getUploadSummary(applicationId).futureValue shouldBe Some(
+        UploadSummaryResponse(
+          applicationId = applicationId,
+          uploads       = Seq(expectedSummary, expectedSummary.copy(uploadId = "upload-2", reference = "ref-2"))
+        )
+      )
+    }
+
+    "return None when the application has no uploads" in {
+      when(mockRepository.findAll(mockitoEq(applicationId)))
+        .thenReturn(Future.successful(Seq.empty))
+
+      service.getUploadSummary(applicationId).futureValue shouldBe None
+    }
+
+    "propagate an error from the repository" in {
+      when(mockRepository.findAll(mockitoEq(applicationId)))
+        .thenReturn(Future.failed(new RuntimeException("Repository error")))
+
+      service.getUploadSummary(applicationId).failed.futureValue.getMessage shouldBe "Repository error"
+    }
+  }
 }

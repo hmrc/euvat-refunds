@@ -17,14 +17,25 @@
 package uk.gov.hmrc.euvatrefunds.services
 
 import play.api.Logging
+import uk.gov.hmrc.euvatrefunds.models.UploadSummary
 import uk.gov.hmrc.euvatrefunds.models.responses.UploadSummaryResponse
-import uk.gov.hmrc.euvatrefunds.repositories.EuVatFileUploadRepository
+import uk.gov.hmrc.euvatrefunds.models.upload.ValidationStatus
+import uk.gov.hmrc.euvatrefunds.repositories.ValidationStatusRepository
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class EuVatFileUploadService @Inject() (repository: EuVatFileUploadRepository)(implicit ec: ExecutionContext) extends Logging {
+class EuVatFileUploadService @Inject() (repository: ValidationStatusRepository)(implicit ec: ExecutionContext) extends Logging {
 
   def getUploadSummary(applicationId: Long): Future[Option[UploadSummaryResponse]] =
-    repository.getUploadSummary(applicationId)
+    repository.findAll(applicationId).map {
+      case Nil     => None
+      case uploads => Some(UploadSummaryResponse(applicationId, uploads.map(toSummary)))
+    }
+
+  private def toSummary(status: ValidationStatus): UploadSummary =
+    status match {
+      case upload: ValidationStatus.AwaitingUpload =>
+        UploadSummary(upload.uploadId, upload.reference, upload.fileStatus, Some(upload.uploadUrl), Some(upload.fields))
+    }
 }
