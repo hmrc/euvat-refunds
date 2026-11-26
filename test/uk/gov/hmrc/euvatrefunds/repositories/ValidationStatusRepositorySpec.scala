@@ -154,4 +154,53 @@ class ValidationStatusRepositorySpec extends AnyWordSpec with Matchers with Opti
       repository.findAll(999999L).futureValue shouldBe Seq(otherApplicationUpload)
     }
   }
+
+  "ValidationStatusRepository.deleteApplicationUploads" should {
+
+    "delete upload having the given applicationId" in {
+      val applicationId1 = 1L
+      val applicationId2 = 2L
+      val upload1 = createUpload("uploadId-1", applicationId1, "ref-1", timestamp)
+      val upload3 = createUpload("uploadId-3", applicationId2, "ref-3", timestamp)
+
+      insert(upload1).futureValue
+      insert(upload3).futureValue
+
+      val result = repository.deleteApplicationUploads(applicationId1).futureValue
+
+      result              shouldBe true
+      findAll().futureValue should contain theSameElementsAs Seq(upload3)
+    }
+  }
+
+  "ValidationStatusRepository.deleteUploadByReference" should {
+
+    "delete upload having the given applicationId and reference" in {
+      val applicationId1 = 1L
+      val applicationId2 = 2L
+      val upload2 = createUpload("uploadId-2", applicationId1, "ref-2", timestamp)
+      val upload3 = createUpload("uploadId-3", applicationId2, "ref-3", timestamp)
+
+      insert(upload2).futureValue
+      insert(upload3).futureValue
+
+      val result = repository.deleteUploadByReference(applicationId1, "ref-2").futureValue
+
+      result              shouldBe true
+      findAll().futureValue should contain theSameElementsAs Seq(upload3)
+    }
+  }
+
+  private def createUpload(uploadId: String, applicationId: Long, reference: String, timestamp: Instant) = {
+    ValidationStatus.AwaitingUpload(
+      uploadId          = uploadId,
+      applicationId     = applicationId,
+      reference         = reference,
+      uploadUrl         = "https://upscan.example/upload",
+      initiateTimestamp = timestamp,
+      fields            = Map("key" -> "ref-1", "x-amz-algorithm" -> "AWS4-HMAC-SHA256"),
+      createdAt         = timestamp,
+      updatedAt         = timestamp
+    )
+  }
 }

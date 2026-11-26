@@ -21,7 +21,7 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.euvatrefunds.actions.AuthAction
-import uk.gov.hmrc.euvatrefunds.services.{CreateUploadTrackingError, CreateUploadTrackingService, EuVatFileUploadService}
+import uk.gov.hmrc.euvatrefunds.services.{CreateUploadTrackingError, CreateUploadTrackingService, FileUploadService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext
@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext
 class FileUploadController @Inject() (
   authorise: AuthAction,
   createUploadTrackingService: CreateUploadTrackingService,
-  uploadSummaryService: EuVatFileUploadService,
+  uploadSummaryService: FileUploadService,
   val cc: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
@@ -45,8 +45,7 @@ class FileUploadController @Inject() (
       createUploadTrackingService
         .createUploadTracking(applicationId, successRedirect, errorRedirect)
         .map {
-          case Right(response) =>
-            Created(Json.toJson(response))
+          case Right(response) => Created(Json.toJson(response))
           case Left(CreateUploadTrackingError.ApplicationNotFound) =>
             logger.warn(s"No application found with id $applicationId")
             NotFound(s"No application found with id $applicationId")
@@ -61,16 +60,20 @@ class FileUploadController @Inject() (
     authorise.async { _ =>
       uploadSummaryService
         .getUploadSummary(applicationId)
-        .map {
-          case Some(summary) =>
-            logger.info(s"Retrieved upload summary for applicationId: $applicationId with ${summary.uploads.size} upload(s)")
-            Ok(Json.toJson(summary))
-          case None =>
-            logger.warn(s"No uploads found for applicationId=$applicationId")
-            NotFound(s"No upload records found for applicationId: $applicationId")
-        }
+        .map(summary => Ok(Json.toJson(summary)))
         .recover { case ex =>
-          logger.error(s"Error retrieving upload summary for applicationId: $applicationId: ${ex.getMessage}", ex)
+          logger.error(s"Error retrieving upload summary for applicationId: $applicationId", ex)
+          InternalServerError("Currently experiencing issues with our service")
+        }
+    }
+
+  def deleteUploadTracking(applicationId: Long): Action[AnyContent] =
+    authorise.async { _ =>
+      uploadSummaryService
+        .deleteUploadTracking(applicationId)
+        .map(result => Ok(Json.toJson(result)))
+        .recover { case ex =>
+          logger.error(s"Error deleting upload tracking for applicationId: $applicationId", ex)
           InternalServerError("Currently experiencing issues with our service")
         }
     }

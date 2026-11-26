@@ -41,3 +41,4 @@ class AppConfig @Inject() (config: Configuration):
   lazy val upscanMaximumFileSize: Long = config.get[Long]("upscan.maximumFileSize")
   lazy val validationStatusTtl: FiniteDuration = config.get[FiniteDuration]("mongodb.validationStatus.ttl")
   lazy val replaceIndexes: Boolean = config.get[Boolean]("mongodb.replaceIndexes")
+  lazy val awaitingUploadExpiryPeriod: FiniteDuration = config.get[FiniteDuration]("awaitingUpload.expiryPeriod")

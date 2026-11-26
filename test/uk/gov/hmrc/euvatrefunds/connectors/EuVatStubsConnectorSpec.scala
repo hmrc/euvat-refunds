@@ -17,11 +17,11 @@
 package uk.gov.hmrc.euvatrefunds.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import com.typesafe.config.ConfigFactory
+import org.mockito.Mockito.when
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.Configuration
+import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.libs.json.Json
 import uk.gov.hmrc.euvatrefunds.config.AppConfig
 import uk.gov.hmrc.euvatrefunds.models.Attachment
@@ -43,21 +43,11 @@ class EuVatStubsConnectorSpec
 
   private given HeaderCarrier = HeaderCarrier()
 
-  private lazy val configuration: Configuration =
-    Configuration(
-      ConfigFactory.parseString(
-        s"""
-           |appName = euvat-refunds
-           |microservice.services.euvat-stubs.host = "$wireMockHost"
-           |microservice.services.euvat-stubs.protocol = "http"
-           |microservice.services.euvat-stubs.port = $wireMockPort
-           |""".stripMargin
-      )
-    )
+  private lazy val mockAppConfig: AppConfig = mock[AppConfig]
+  when(mockAppConfig.appName).thenReturn("euvat-refunds")
+  when(mockAppConfig.baseUrl("euvat-stubs")).thenReturn(s"http://$wireMockHost:$wireMockPort")
 
-  private lazy val appConfig: AppConfig = new AppConfig(configuration)
-
-  private lazy val connector: EuVatStubsConnector = new EuVatStubsConnector(appConfig, httpClientV2)
+  private lazy val connector: EuVatStubsConnector = new EuVatStubsConnector(mockAppConfig, httpClientV2)
 
   private val sampleLatestApplicationResponse = LatestApplicationResponse(
     applications     = List.empty,
