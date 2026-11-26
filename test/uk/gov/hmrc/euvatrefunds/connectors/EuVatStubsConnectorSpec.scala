@@ -873,4 +873,17 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.getApplicationCounts" should {
+    val response = ApplicationCountsResponse(purchaseCount = 2, importCount = 3, attachmentCount = 4)
+
+    "return the counts without sending a request body" in {
+      stubFor(
+        get(urlEqualTo("/euvat-stubs/get-application-counts/133"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
+      )
+
+      connector.getApplicationCounts(133L).futureValue shouldBe response
+    }
+  }
+
 }

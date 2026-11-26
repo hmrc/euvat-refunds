@@ -24,5 +24,6 @@ POST      /:applicationId/create-upload-tracking             uk.gov.hmrc.euvatre
 GET       /get-attachment-details/:applicationId/:attachmentNumber      uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getAttachmentDetails(applicationId: Long, attachmentNumber: Int)
 POST      /get-all-attachments                                            uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getAllAttachments
 GET       /get-full-attachment-details/:applicationId/:attachmentNumber   uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getFullAttachmentDetails(applicationId: Long, attachmentNumber: Int)
-DELETE    /delete-attachment                                 uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteAttachment
-GET       /:applicationId/get-upload-results                 uk.gov.hmrc.euvatrefunds.controllers.FileUploadController.getUploadSummary(applicationId: Long)
+DELETE    /delete-attachment                                              uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteAttachment
+GET       /:applicationId/get-upload-results                              uk.gov.hmrc.euvatrefunds.controllers.FileUploadController.getUploadSummary(applicationId: Long)
+GET       /get-application-counts/:applicationId                          uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getApplicationCounts(applicationId: Long)

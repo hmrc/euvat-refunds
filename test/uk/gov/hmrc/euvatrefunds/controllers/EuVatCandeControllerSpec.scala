@@ -1144,4 +1144,27 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.getApplicationCounts" should {
+    val response = ApplicationCountsResponse(purchaseCount = 2, importCount = 3, attachmentCount = 4)
+
+    "return application counts as JSON without requiring a request body" in {
+      when(service.getApplicationCounts(mockitoEq(133L))(any[HeaderCarrier]()))
+        .thenReturn(Future.successful(response))
+
+      val result = controller.getApplicationCounts(133L)(FakeRequest(GET, "/get-application-counts/133"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return an internal server error when the service fails" in {
+      when(service.getApplicationCounts(mockitoEq(133L))(any[HeaderCarrier]()))
+        .thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getApplicationCounts(133L)(FakeRequest(GET, "/get-application-counts/133"))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
 }
