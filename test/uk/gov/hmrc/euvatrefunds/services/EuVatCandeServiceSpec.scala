@@ -1674,4 +1674,34 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
     }
   }
 
+  "EuVatCandeService.getApplicationCounts" should {
+    val response = ApplicationCountsResponse(purchaseCount = 2, importCount = 3, attachmentCount = 4)
+
+    "use the rds cande connector when stubbing is disabled" in {
+      val configuration = Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+      val mockCandeConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getApplicationCounts(133L)(hc))
+        .thenReturn(Future.successful(response))
+
+      service.getApplicationCounts(133L).futureValue shouldBe response
+      verify(mockCandeConnector, times(1)).getApplicationCounts(133L)(hc)
+    }
+
+    "use the stubs connector when stubbing is enabled" in {
+      val configuration = Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+      val mockCandeConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getApplicationCounts(133L)(hc))
+        .thenReturn(Future.successful(response))
+
+      service.getApplicationCounts(133L).futureValue shouldBe response
+      verify(mockStubsConnector, times(1)).getApplicationCounts(133L)(hc)
+    }
+  }
+
 }

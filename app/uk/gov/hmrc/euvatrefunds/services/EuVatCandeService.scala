@@ -225,4 +225,12 @@ class EuVatCandeService @Inject() (
       rdsCandeProxyConnector.deleteAttachment(request)
     }
   }
+
+  def getApplicationCounts(applicationId: Long)(implicit hc: HeaderCarrier): Future[ApplicationCountsResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getApplicationCounts(applicationId)
+    } else {
+      rdsCandeProxyConnector.getApplicationCounts(applicationId)
+    }
+  }
 }
