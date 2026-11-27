@@ -19,22 +19,25 @@ package uk.gov.hmrc.euvatrefunds.models.upload
 import play.api.libs.json.*
 
 enum FileStatus(val jsonValue: String):
-  case AwaitingUpload     extends FileStatus("AWAITING_UPLOAD")
-  case Verifying          extends FileStatus("VERIFYING")
-  case VerificationFailed extends FileStatus("VERIFICATION_FAILED")
-  case Validating         extends FileStatus("VALIDATING")
-  case Validated          extends FileStatus("VALIDATED")
-  case ValidationFailed   extends FileStatus("VALIDATION_FAILED")
+  case AwaitingUpload extends FileStatus("AWAITING_UPLOAD")
+  case Ready          extends FileStatus("READY")
+  case Failed         extends FileStatus("FAILED")
 
 object FileStatus:
 
   private val reads: Reads[FileStatus] = Reads {
     case JsString(value) =>
-      values.find(_.jsonValue == value).map(JsSuccess(_)).getOrElse(JsError(s"Unknown file status: $value"))
+      FileStatus.values
+        .find(_.jsonValue == value)
+        .map(JsSuccess(_))
+        .getOrElse(JsError(s"Unknown file status: $value"))
+
     case _ =>
       JsError("File status must be a string")
   }
 
-  private val writes: Writes[FileStatus] = Writes(status => JsString(status.jsonValue))
+  private val writes: Writes[FileStatus] =
+    Writes(status => JsString(status.jsonValue))
 
-  given Format[FileStatus] = Format(reads, writes)
+  given Format[FileStatus] =
+    Format(reads, writes)

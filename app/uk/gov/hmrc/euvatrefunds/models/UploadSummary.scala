@@ -23,7 +23,7 @@ final case class UploadSummary(
   uploadId: String,
   reference: String,
   fileStatus: FileStatus,
-  uploadUrl: Option[String] = None,
+  uploadUrl: String,
   fields: Option[Map[String, String]] = None
 )
 
@@ -37,7 +37,7 @@ object UploadSummary {
     )
 
     (uploadSummary.uploadUrl, uploadSummary.fields) match {
-      case (Some(url), Some(fields)) =>
+      case (url, Some(fields)) =>
         mandatoryFields + ("uploadUrl" -> Json.toJson(url)) + ("fields" -> Json.toJson(fields))
       case _ =>
         mandatoryFields

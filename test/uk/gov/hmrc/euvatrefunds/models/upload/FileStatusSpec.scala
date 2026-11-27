@@ -23,12 +23,35 @@ import play.api.libs.json.{JsError, JsNumber, JsString, JsSuccess, Json}
 class FileStatusSpec extends AnyWordSpec with Matchers {
 
   "FileStatus format" should {
+
     "write AwaitingUpload as AWAITING_UPLOAD" in {
-      Json.toJson[FileStatus](FileStatus.AwaitingUpload) shouldBe JsString("AWAITING_UPLOAD")
+      Json.toJson[FileStatus](FileStatus.AwaitingUpload) shouldBe
+        JsString("AWAITING_UPLOAD")
     }
 
-    "read AWAITING_UPLOAD" in {
-      JsString("AWAITING_UPLOAD").validate[FileStatus] shouldBe JsSuccess(FileStatus.AwaitingUpload)
+    "write Ready as READY" in {
+      Json.toJson[FileStatus](FileStatus.Ready) shouldBe
+        JsString("READY")
+    }
+
+    "write Failed as FAILED" in {
+      Json.toJson[FileStatus](FileStatus.Failed) shouldBe
+        JsString("FAILED")
+    }
+
+    "read AWAITING_UPLOAD as AwaitingUpload" in {
+      JsString("AWAITING_UPLOAD").validate[FileStatus] shouldBe
+        JsSuccess(FileStatus.AwaitingUpload)
+    }
+
+    "read READY as Ready" in {
+      JsString("READY").validate[FileStatus] shouldBe
+        JsSuccess(FileStatus.Ready)
+    }
+
+    "read FAILED as Failed" in {
+      JsString("FAILED").validate[FileStatus] shouldBe
+        JsSuccess(FileStatus.Failed)
     }
 
     "fail to read an unknown status" in {

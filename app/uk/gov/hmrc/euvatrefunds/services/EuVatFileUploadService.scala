@@ -19,23 +19,41 @@ package uk.gov.hmrc.euvatrefunds.services
 import play.api.Logging
 import uk.gov.hmrc.euvatrefunds.models.UploadSummary
 import uk.gov.hmrc.euvatrefunds.models.responses.UploadSummaryResponse
-import uk.gov.hmrc.euvatrefunds.models.upload.ValidationStatus
-import uk.gov.hmrc.euvatrefunds.repositories.ValidationStatusRepository
+import uk.gov.hmrc.euvatrefunds.models.upload.UploadRecord
+import uk.gov.hmrc.euvatrefunds.repositories.UploadRepository
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class EuVatFileUploadService @Inject() (repository: ValidationStatusRepository)(implicit ec: ExecutionContext) extends Logging {
+class EuVatFileUploadService @Inject() (
+  repository: UploadRepository
+)(implicit ec: ExecutionContext)
+    extends Logging {
 
-  def getUploadSummary(applicationId: Long): Future[Option[UploadSummaryResponse]] =
+  def getUploadSummary(
+    applicationId: Long
+  ): Future[Option[UploadSummaryResponse]] =
     repository.findAll(applicationId).map {
-      case Nil     => None
-      case uploads => Some(UploadSummaryResponse(applicationId, uploads.map(toSummary)))
+      case Nil =>
+        None
+
+      case uploads =>
+        Some(
+          UploadSummaryResponse(
+            applicationId = applicationId,
+            uploads       = uploads.map(toSummary)
+          )
+        )
     }
 
-  private def toSummary(status: ValidationStatus): UploadSummary =
-    status match {
-      case upload: ValidationStatus.AwaitingUpload =>
-        UploadSummary(upload.uploadId, upload.reference, upload.fileStatus, Some(upload.uploadUrl), Some(upload.fields))
-    }
+  private def toSummary(
+    upload: UploadRecord
+  ): UploadSummary =
+    UploadSummary(
+      uploadId   = upload.uploadId,
+      reference  = upload.reference,
+      fileStatus = upload.fileStatus,
+      uploadUrl  = upload.uploadUrl,
+      fields     = Some(upload.fields)
+    )
 }
