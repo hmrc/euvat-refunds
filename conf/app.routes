@@ -26,3 +26,4 @@ POST      /get-all-attachments                                            uk.gov
 GET       /get-full-attachment-details/:applicationId/:attachmentNumber   uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getFullAttachmentDetails(applicationId: Long, attachmentNumber: Int)
 DELETE    /delete-attachment                                 uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.deleteAttachment
 GET       /:applicationId/get-upload-results                 uk.gov.hmrc.euvatrefunds.controllers.FileUploadController.getUploadSummary(applicationId: Long)
+GET       /get-submission-datetime/:applicationId            uk.gov.hmrc.euvatrefunds.controllers.EuVatCandeController.getSubmissionDateTime(applicationId: Long)

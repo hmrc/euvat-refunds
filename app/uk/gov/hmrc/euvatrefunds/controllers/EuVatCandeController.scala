@@ -441,3 +441,14 @@ class EuVatCandeController @Inject() (
             }
       }
     }
+
+  def getSubmissionDateTime(applicationId: Long): Action[AnyContent] =
+    authorise.async { implicit request =>
+      service
+        .getSubmissionDateTime(applicationId)
+        .map(response => Ok(Json.toJson(response)))
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving submission date", ex)
+          InternalServerError("Failed to retrieve submission date")
+        }
+    }

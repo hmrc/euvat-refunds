@@ -747,4 +747,26 @@ class RdsCandeProxyConnectorSpec
     }
   }
 
+  "RdsCandeProxyConnector.getSubmissionDateTime" should {
+    val response = SubmissionDateResponse("2025-01-31")
+
+    "return the submission date when rds-cande-proxy returns 200" in {
+      stubFor(
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-submission-datetime/133"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
+      )
+
+      connector.getSubmissionDateTime(133L).futureValue shouldBe response
+    }
+
+    "return error when rds-cande-proxy returns 500" in {
+      stubFor(
+        get(urlEqualTo("/rds-cande-proxy/euvat/get-submission-datetime/133"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getSubmissionDateTime(133L).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }

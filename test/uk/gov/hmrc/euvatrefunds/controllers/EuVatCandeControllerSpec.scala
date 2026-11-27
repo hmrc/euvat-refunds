@@ -1144,4 +1144,25 @@ class EuVatCandeControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
+  "EuVatCandeController.getSubmissionDateTime" should {
+    val response = SubmissionDateResponse("2025-01-31")
+
+    "return 200 with the submission date as JSON" in {
+      when(service.getSubmissionDateTime(any[Long]())(any())).thenReturn(Future.successful(response))
+
+      val result = controller.getSubmissionDateTime(133L)(FakeRequest(GET, "/get-submission-datetime/133"))
+
+      status(result)        shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+
+    "return 500 when service fails" in {
+      when(service.getSubmissionDateTime(any[Long]())(any())).thenReturn(Future.failed(new RuntimeException("DB error")))
+
+      val result = controller.getSubmissionDateTime(133L)(FakeRequest(GET, "/get-submission-datetime/133"))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
 }

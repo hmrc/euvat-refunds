@@ -225,4 +225,12 @@ class EuVatCandeService @Inject() (
       rdsCandeProxyConnector.deleteAttachment(request)
     }
   }
+
+  def getSubmissionDateTime(applicationId: Long)(implicit hc: HeaderCarrier): Future[SubmissionDateResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getSubmissionDateTime(applicationId)
+    } else {
+      rdsCandeProxyConnector.getSubmissionDateTime(applicationId)
+    }
+  }
 }

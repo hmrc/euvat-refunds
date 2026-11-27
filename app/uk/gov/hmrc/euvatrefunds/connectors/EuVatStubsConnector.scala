@@ -182,3 +182,8 @@ class EuVatStubsConnector @Inject() (
       .delete(url"$baseUrl/delete-attachment")
       .withBody(Json.toJson(request))
       .execute[DeleteAttachmentResponse]
+
+  def getSubmissionDateTime(applicationId: Long)(implicit hc: HeaderCarrier): Future[SubmissionDateResponse] =
+    http
+      .get(url"$baseUrl/get-submission-datetime/$applicationId")
+      .execute[SubmissionDateResponse]

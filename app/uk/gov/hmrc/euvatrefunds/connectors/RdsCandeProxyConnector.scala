@@ -175,3 +175,8 @@ class RdsCandeProxyConnector @Inject() (
       .delete(url"$baseUrl/euvat/delete-attachment")
       .withBody(Json.toJson(request))
       .execute[DeleteAttachmentResponse]
+
+  def getSubmissionDateTime(applicationId: Long)(implicit hc: HeaderCarrier): Future[SubmissionDateResponse] =
+    http
+      .get(url"$baseUrl/euvat/get-submission-datetime/$applicationId")
+      .execute[SubmissionDateResponse]
