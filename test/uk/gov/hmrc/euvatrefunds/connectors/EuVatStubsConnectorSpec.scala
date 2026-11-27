@@ -873,4 +873,26 @@ class EuVatStubsConnectorSpec
     }
   }
 
+  "EuVatStubsConnector.getSubmissionDateTime" should {
+    val response = SubmissionDateResponse("2025-01-31")
+
+    "return the submission date when euvat-stubs returns 200" in {
+      stubFor(
+        get(urlEqualTo("/euvat-stubs/get-submission-datetime/133"))
+          .willReturn(aResponse().withStatus(200).withBody(Json.toJson(response).toString))
+      )
+
+      connector.getSubmissionDateTime(133L).futureValue shouldBe response
+    }
+
+    "return error when euvat-stubs returns 500" in {
+      stubFor(
+        get(urlEqualTo("/euvat-stubs/get-submission-datetime/133"))
+          .willReturn(aResponse().withStatus(500))
+      )
+
+      connector.getSubmissionDateTime(133L).failed.futureValue shouldBe a[UpstreamErrorResponse]
+    }
+  }
+
 }

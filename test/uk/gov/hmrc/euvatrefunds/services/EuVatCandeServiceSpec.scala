@@ -1674,4 +1674,34 @@ class EuVatCandeServiceSpec extends AnyWordSpec with Matchers with MockitoSugar 
     }
   }
 
+  "EuVatCandeService.getSubmissionDateTime" should {
+    val response = SubmissionDateResponse("2025-01-31")
+
+    "return the response from the rds cande connector" in {
+      val configuration = Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = false"))
+      val mockCandeConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockCandeConnector.getSubmissionDateTime(any[Long]())(any()))
+        .thenReturn(Future.successful(response))
+
+      service.getSubmissionDateTime(133L).futureValue shouldBe response
+      verify(mockCandeConnector, times(1)).getSubmissionDateTime(any[Long]())(any())
+    }
+
+    "return the response from the stubs connector" in {
+      val configuration = Configuration(ConfigFactory.parseString("feature-switch.rds-cande-stubbed = true"))
+      val mockCandeConnector = mock[RdsCandeProxyConnector]
+      val mockStubsConnector = mock[EuVatStubsConnector]
+      val service = new EuVatCandeService(mockCandeConnector, mockStubsConnector, configuration)
+
+      when(mockStubsConnector.getSubmissionDateTime(any[Long]())(any()))
+        .thenReturn(Future.successful(response))
+
+      service.getSubmissionDateTime(133L).futureValue shouldBe response
+      verify(mockStubsConnector, times(1)).getSubmissionDateTime(any[Long]())(any())
+    }
+  }
+
 }
