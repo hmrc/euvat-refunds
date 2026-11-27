@@ -441,3 +441,16 @@ class EuVatCandeController @Inject() (
             }
       }
     }
+
+  def getApplicationForSubmission(applicationId: Long): Action[AnyContent] =
+    authorise.async { implicit request =>
+      service
+        .getApplicationForSubmission(applicationId)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+        .recover { case ex: Exception =>
+          logger.error("Error while retrieving application for Submission", ex)
+          InternalServerError("Failed to retrieve application  for Submission")
+        }
+    }
