@@ -225,4 +225,12 @@ class EuVatCandeService @Inject() (
       rdsCandeProxyConnector.deleteAttachment(request)
     }
   }
+
+  def getApplicationForSubmission(applicationId: Long)(implicit hc: HeaderCarrier): Future[GetApplicationForSubmissionResponse] = {
+    if (candeStubbed) {
+      euVatStubsConnector.getApplicationForSubmission(applicationId)
+    } else {
+      rdsCandeProxyConnector.getApplicationForSubmission(applicationId)
+    }
+  }
 }

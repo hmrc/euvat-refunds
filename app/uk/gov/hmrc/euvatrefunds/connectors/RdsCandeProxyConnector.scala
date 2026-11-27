@@ -175,3 +175,8 @@ class RdsCandeProxyConnector @Inject() (
       .delete(url"$baseUrl/euvat/delete-attachment")
       .withBody(Json.toJson(request))
       .execute[DeleteAttachmentResponse]
+
+  def getApplicationForSubmission(applicationId: Long)(implicit hc: HeaderCarrier): Future[GetApplicationForSubmissionResponse] =
+    http
+      .get(url"$baseUrl/euvat/get-application-for-submission/$applicationId")
+      .execute[GetApplicationForSubmissionResponse]
