@@ -144,7 +144,7 @@ class FileUploadControllerSpec extends AnyWordSpec with Matchers with ScalaFutur
           uploadId   = "upload-1",
           reference  = "f5da5578-8393-4cd1-be0e-d8ef1b78d8e7",
           fileStatus = FileStatus.AwaitingUpload,
-          uploadUrl  = Some("https://xxxx/upscan-upload-proxy/bucketName"),
+          uploadUrl  = "https://xxxx/upscan-upload-proxy/bucketName",
           fields     = Some(Map("acl" -> "private", "x-amz-signature" -> "xxxx"))
         )
       )
